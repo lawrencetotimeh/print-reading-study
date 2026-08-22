@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print Reading Study Tool</title>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#ffffff; --accent:#2563eb; --accent2:#1d4ed8;
+    --text:#1f2937; --muted:#6b7280; --green:#16a34a; --red:#dc2626;
+    --border:#e5e7eb; --amber:#d97706;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,#0f1720,#1e293b); min-height:100vh; color:var(--text);
+    display:flex; flex-direction:column; align-items:center; padding:20px 14px 60px;
+  }
+  .topbar{ width:100%; max-width:640px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  h1{ color:#fff; font-size:1.25rem; margin:0; }
+  .lang-toggle{ display:flex; gap:6px; }
+  .lang-toggle button{ padding:6px 12px; border-radius:8px; border:1px solid #475569; background:#1e293b; color:#cbd5e1; cursor:pointer; font-size:0.8rem; }
+  .lang-toggle button.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .subtitle{ color:#94a3b8; font-size:0.85rem; margin-bottom:16px; text-align:center; max-width:640px; }
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:18px; max-width:640px; }
+  .tab-btn{ padding:9px 14px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#cbd5e1; cursor:pointer; font-size:0.82rem; }
+  .tab-btn.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .panel{ width:100%; max-width:640px; background:var(--panel); border-radius:16px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
+  .hint{ font-size:0.78rem; color:var(--muted); margin-bottom:10px; }
+  .breadcrumb{ font-size:0.85rem; color:var(--accent2); cursor:pointer; margin-bottom:12px; display:inline-block; }
+  .module-card{ border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .module-card.clickable{ cursor:pointer; }
+  .module-card.clickable:hover{ border-color:var(--accent); }
+  .module-card.locked{ opacity:0.55; }
+  .module-card .mc-title{ font-weight:600; font-size:0.95rem; }
+  .module-card .mc-sub{ font-size:0.75rem; color:var(--muted); margin-top:2px; }
+  .module-card .mc-date{ font-size:0.75rem; color:var(--muted); margin-top:4px; }
+  .mc-seq{ display:inline-block; min-width:1.6em; text-align:center; margin-right:2px; padding:1px 7px; border-radius:999px; background:var(--accent); color:#fff; font-size:0.85em; font-weight:700; }
+  button.cal-btn{ width:auto; padding:5px 10px; font-size:0.72rem; background:transparent; border:1px solid var(--accent); color:var(--accent); border-radius:8px; cursor:pointer; white-space:nowrap; }
+  button.cal-btn:hover{ background:var(--accent); color:#fff; }
+  .badge{ font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+  .badge.locked{ background:#f1f5f9; color:var(--muted); }
+  .badge.progress{ background:#fef3c7; color:var(--amber); }
+  .badge.done{ background:#dcfce7; color:var(--green); }
+  .badge.coming{ background:#e0e7ff; color:#4338ca; }
+  .cum-card{ border:2px dashed #93c5fd; border-radius:12px; padding:14px 16px; margin:4px 0 14px; background:#eff6ff; }
+  .test-box{ border:2px solid var(--accent); border-radius:14px; padding:16px 18px; margin:6px 0 18px; background:var(--test-box-bg, #fff7ed); }
+  .test-box h3{ margin-top:0; }
+  button.test-btn{ background:var(--accent); color:#fff; border:none; padding:16px 18px; border-radius:12px; font-size:1.05rem; font-weight:700; cursor:pointer; width:100%; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+  button.test-btn:hover{ background:var(--accent2); }
+  .score-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:14px 0; }
+  .score-card{ border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
+  .score-card .pct{ font-size:1.3rem; font-weight:700; }
+  .score-card .lbl{ font-size:0.72rem; color:var(--muted); margin-top:2px;}
+  .pass{ color:var(--green); } .fail{ color:var(--red); } .pending{ color:var(--muted); }
+  button.primary{ background:var(--accent); color:#fff; border:none; padding:11px 18px; border-radius:10px; font-size:0.9rem; cursor:pointer; width:100%; }
+  button.primary:hover{ background:var(--accent2); }
+  button.small{ width:auto; padding:8px 14px; font-size:0.82rem; }
+  button.option{ display:block; width:100%; text-align:left; padding:12px 14px; margin:8px 0; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:0.9rem; }
+  button.option:hover{ border-color:var(--accent); }
+  button.option.correct{ background:#bbf7d0; border:2px solid #15803d; color:#14532d; font-weight:700; }
+  button.option.incorrect{ background:#fecaca; border:2px solid #b91c1c; color:#7f1d1d; font-weight:700; }
+  button.option.selected{ background:#dbeafe; border:2px solid var(--accent); }
+  .review-item{ border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; text-align:left; }
+  .review-item .rq{ font-weight:600; font-size:0.88rem; margin-bottom:6px; }
+  .review-item .ra{ font-size:0.84rem; margin-bottom:3px; }
+  .review-item .ra.wrong{ color:#b91c1c; }
+  .review-item .ra.right{ color:#15803d; }
+  .review-item .rexp{ font-size:0.82rem; color:var(--muted); margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); }
+  .q-count{ font-size:0.78rem; color:var(--muted); margin-bottom:6px; }
+  .q-text{ font-size:1.02rem; font-weight:600; margin-bottom:12px; }
+  .explain{ margin-top:12px; padding:12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; font-size:0.86rem; display:none; }
+  .explain.show{ display:block; }
+  .result-big{ text-align:center; padding:16px 0; }
+  .result-pct{ font-size:2.2rem; font-weight:800; }
+  .result-msg{ font-size:0.92rem; color:var(--muted); margin-top:6px; }
+  .scene{ width:100%; height:290px; perspective:1400px; margin-bottom:16px; }
+  .card{ width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .5s; cursor:pointer; }
+  .card.flipped{ transform:rotateY(180deg); }
+  .face{ position:absolute; inset:0; backface-visibility:hidden; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:22px; text-align:center; }
+  .front{ background:#fff; border:1px solid var(--border); }
+  .back{ background:#eff6ff; border:1px solid #bfdbfe; transform:rotateY(180deg); }
+  .tag{ position:absolute; top:12px; left:14px; font-size:0.66rem; text-transform:uppercase; color:var(--muted); font-weight:700;}
+  .nav{ display:flex; gap:10px; justify-content:center; margin-top:4px; }
+  .nav button{ font-size:0.82rem; padding:8px 14px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; }
+  .tip-box{ border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:12px; }
+  .tip-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--border); }
+  .tip-row:first-of-type{ border-top:none; }
+  select{ padding:6px 10px; border-radius:8px; border:1px solid var(--border); }
+  footer{ color:#64748b; font-size:0.72rem; margin-top:18px; text-align:center; max-width:600px; }
+  .glossary-term{ text-decoration:underline dotted; text-decoration-color:var(--accent); text-underline-offset:3px; color:var(--accent2); cursor:pointer; font-weight:600; }
+  .modal-overlay{ position:fixed; inset:0; background:rgba(15,23,32,0.65); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .modal-box{ background:#fff; border-radius:14px; padding:24px; max-width:380px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
+  .modal-term{ font-weight:700; font-size:1.1rem; margin-bottom:8px; color:var(--accent2); }
+  .modal-def{ font-size:0.92rem; color:var(--text); margin-bottom:16px; line-height:1.5; }
+  .pref-label{ display:block; font-weight:600; font-size:0.85rem; margin-bottom:6px; }
+  .pref-cadence-opt{ display:flex; align-items:flex-start; gap:8px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px; cursor:pointer; }
+  .pref-cadence-opt input{ margin-top:3px; }
+  .pref-cadence-opt .pco-title{ font-weight:600; font-size:0.88rem; }
+  .pref-cadence-opt .pco-sub{ font-size:0.76rem; color:var(--muted); margin-top:2px; }
+  .study-minutes{ font-size:0.75rem; color:var(--muted); }
+
+  /* ---- light mode ---- */
+  body.light-mode{ background:linear-gradient(160deg,#f8fafc,#e2e8f0); }
+  body.light-mode h1{ color:#0f1720; }
+  body.light-mode .subtitle{ color:#475569; }
+  body.light-mode .lang-toggle button, body.light-mode .tab-btn, body.light-mode .icon-btn{
+    background:#e2e8f0; color:#334155; border-color:#cbd5e1;
+  }
+  body.light-mode .lang-toggle button.active, body.light-mode .tab-btn.active{
+    background:var(--accent); color:#fff; border-color:var(--accent);
+  }
+  body.light-mode footer{ color:#64748b; }
+
+  /* ---- topbar icon buttons (text size / theme) ---- */
+  .icon-btn{ padding:6px 10px; border-radius:8px; border:1px solid #475569; background:#1e293b; color:#cbd5e1; cursor:pointer; font-size:0.8rem; font-weight:700; }
+  .topbar-right{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+
+  /* ---- continue / streak / quick-review / missed-review cards ---- */
+  .continue-card{ border:2px solid var(--accent); border-radius:12px; padding:14px 16px; margin-bottom:14px; background:#eff6ff; cursor:pointer; }
+  .continue-card:hover{ background:#dbeafe; }
+  .continue-card .cc-label{ font-size:0.72rem; text-transform:uppercase; font-weight:700; color:var(--accent2); letter-spacing:0.03em; }
+  .continue-card .cc-title{ font-weight:700; font-size:1rem; margin-top:2px; }
+  .streak-line{ font-size:0.85rem; color:var(--amber); font-weight:600; margin-bottom:10px; }
+  .quick-card, .missed-card{ border:1px dashed #94a3b8; border-radius:12px; padding:12px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; background:#f8fafc; }
+  .quick-card:hover, .missed-card:hover{ border-color:var(--accent); }
+  .quick-card .qc-title, .missed-card .qc-title{ font-weight:600; font-size:0.92rem; }
+  .quick-card .qc-sub, .missed-card .qc-sub{ font-size:0.75rem; color:var(--muted); margin-top:2px; }
+
+  /* bigger, easier-to-tap answer buttons */
+  button.option{ min-height:44px; }
+  button.primary{ min-height:46px; }
+
+  /* ---- Duolingo-style mixed question types: fill-in-the-blank word bank + matching ---- */
+  .type-tag{ display:inline-block; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--accent2); background:#eff6ff; border:1px solid #bfdbfe; border-radius:999px; padding:2px 9px; margin-bottom:8px; }
+  #optsWrap.chips{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  #optsWrap.chips button.option{ display:inline-block; width:auto; margin:0; padding:9px 16px; border-radius:999px; font-weight:600; }
+  .match-cols{ display:flex; gap:10px; margin:12px 0; }
+  .match-col{ flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .match-btn{ display:block; width:100%; text-align:left; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:0.85rem; line-height:1.25; }
+  .match-btn:hover{ border-color:var(--accent); }
+  .match-btn.selected{ background:#dbeafe; border:2px solid var(--accent); }
+  .match-btn.locked{ cursor:default; opacity:0.75; }
+  .match-btn.correct{ background:#bbf7d0; border:2px solid #15803d; color:#14532d; font-weight:700; }
+  .match-btn.incorrect{ background:#fecaca; border:2px solid #b91c1c; color:#7f1d1d; font-weight:700; }
+  .match-hint{ font-size:0.78rem; color:var(--muted); margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1 id="appTitle">Print Reading Study Tool</h1>
+  <div class="topbar-right">
+    <button id="btnGoHome" class="icon-btn" title="Go home" style="background:#2563eb;border-color:#2563eb;color:#fff;">🏠 Home</button>
+    <button id="btnTextSize" class="icon-btn" title="Text size">Aa</button>
+    <button id="btnTheme" class="icon-btn" title="Light / dark">🌙</button>
+    <div class="lang-toggle">
+      <button id="btnEN" class="active">EN</button>
+      <button id="btnES">ES</button>
+    </div>
+  </div>
+</div>
+<div class="subtitle" id="subtitle"></div>
+
+<div class="tabs" id="topTabs"></div>
+<div class="panel" id="panel"></div>
+<footer id="footerNote"></footer>
+
+<div class="modal-overlay" id="glossaryOverlay">
+  <div class="modal-box">
+    <div class="modal-term" id="glossTermText"></div>
+    <div class="modal-def" id="glossDefText"></div>
+    <button class="primary" id="glossCloseBtn">Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="onboardingOverlay">
+  <div class="modal-box">
+    <div class="modal-term" id="onboardTitle"></div>
+    <div class="modal-def" id="onboardBody" style="white-space:pre-line;"></div>
+    <button class="primary" id="onboardCloseBtn">Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="studyPrefOverlay">
+  <div class="modal-box">
+    <div class="modal-term" id="studyPrefTitle"></div>
+    <div class="modal-def" id="studyPrefIntro"></div>
+    <label class="pref-label" id="studyPrefTimeLabel"></label>
+    <input type="time" id="studyPrefTimeInput" value="19:00" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:1rem;margin-bottom:14px;background:var(--panel-bg,#fff);color:inherit;">
+    <label class="pref-label" id="studyPrefCadenceLabel"></label>
+    <div id="studyPrefCadenceOpts" style="margin-bottom:16px;"></div>
+    <button class="primary" id="studyPrefSaveBtn"></button>
+    <button class="primary" id="studyPrefCancelBtn" style="background:#475569;margin-top:8px;"></button>
+  </div>
+</div>
+
+<script>
+/* ============ TRANSLATIONS ============ */
+const T = {
+  en:{
+    subtitle:"Printreading for Residential and Light Commercial Construction — free study tool, one week at a time",
+    tabHome:"Weeks", tabCards:"Flashcards", tabSupport:"Support",
+    homeIntro:"Every week and week test is open, jump to whatever you need to study. These aren't official grades, just a personal goal: aim for 80%+ on sections and week tests before you move on. There's a Cumulative Review after Week 2 covering everything so far.",
+    glossaryHint:"Tip: any underlined word is tappable, tap it for a quick definition without losing your place.",
+    locked:"Locked", unlocked:"Unlocked", completed:"Completed", comingSoon:"Coming soon", inProgress:"In progress",
+    openModule:"Open", backToModules:"← Back to weeks",
+    scoreLabel:"Best score", notStarted:"Not started", passed:"Passed", tryAgainSection:"Below 80% — try again", tryAgainTest:"Below 80% — try again",
+    startBtn:"Start quiz", question:"Question", of:"of",
+    nextBtn:"Next question", finishBtn:"See results",
+    yourScore:"Your score",
+    passMsgSection:"Nice, you passed this section! Take it again anytime — the goal isn't just the score, it's knowing this material cold before class.",
+    passMsgTest:"You passed! Feel free to retake it whenever you want to lock the material in even tighter.",
+    failMsgSection:"Not quite at 80% yet, and that's okay — this is for learning, not judging.",
+    failMsgTest:"Not quite at 80% yet, and that's okay — this is for learning, not judging.",
+    retakeEncourage:"Take it again as many times as you need. The real goal is understanding this chapter, not just clearing a number.",
+    retakeTips:"To do better next time: read every explanation below closely (especially for the questions you missed), tap any underlined word for a quick definition, and don't guess — if a question stumps you, that's exactly the thing to go re-read in the textbook before you retake it.",
+    retakeBtn:"Retake", backHome:"🏠 Home",
+    typeTagFill:"Fill in the blank", typeTagMatch:"Matching",
+    matchHint:"Tap a term on the left, then tap its match on the right.",
+    moduleTestLockedMsg:"Score 80%+ on all sections in this week to unlock its test.",
+    moduleTestLabel:"Week Test", startTest:"Start week test", passThreshold:"Goal: 80%+",
+    sectionThreshold:"Goal: 80%+",
+    startsOn:"Class date", startedOn:"Covered in class", examOn:"Review by", examToday:"Next class is today!",
+    examInDays:(n)=> n===1 ? "Next class in 1 day" : `Next class in ${n} days`,
+    addToCalendar:"📅 Add to calendar", icsStartSummary:(num)=>`Print Reading Week ${num} starts`,
+    icsStartDesc:(title)=>`Time to start studying ${title} on the Print Reading study tool.`,
+    icsStudySummary:(num)=>`Study for Week ${num} before class!`,
+    icsStudyDesc:(title,examDate)=>`${title} is discussed in class on ${examDate}. Open the study tool and review the sections + flashcards before then.`,
+    icsExamSummary:(num)=>`Week ${num} — next class`,
+    icsExamDesc:(title)=>`Class day for ${title}. Bring your textbook, scale, and any homework that's due.`,
+    icsLinkLabel:"Study tool link",
+    studyPrefTitle:"When do you like to study?",
+    studyPrefIntro:"Pick a time and we'll build your study reminders around it. Since this class only meets once a week, spreading a couple of short review sessions across the week works better for remembering the material than one big cram session the night before. You only have to set this once; every week will reuse it.",
+    studyPrefTimeLabel:"What time of day?",
+    studyPrefCadenceLabel:"How do you want reminders spaced out?",
+    cadenceSpacedTitle:"Two reminders (recommended)", cadenceSpacedSub:"A reminder 3 days before your next class, and another the day before — good spacing without overdoing it for a once-a-week class.",
+    cadenceSingleTitle:"One reminder only", cadenceSingleSub:"A single reminder the day before your next class.",
+    studyPrefSave:"Save & add to calendar", studyPrefCancel:"Cancel",
+    changeStudyTime:"⏰ Study time settings",
+    estStudyTime:(mins)=> `⏱️ About ${mins} min to go over this week`,
+    icsStudyReminderTitle:(num,mins)=>`Study Week ${num} (~${mins} min)`,
+    cumulativeLabel:"Cumulative Review", cumulativeLockedMsg:"Finish this week (all sections + week test) to unlock this review.",
+    cumulativeAvailMsg:"Covers everything through this week. Aim for 80%+ before moving to the next week.",
+    startCumulative:"Start cumulative review",
+    flipHint:"Tap card to flip", flipBackHint:"Tap card to flip back",
+    prevBtn:"← Prev", flipBtn:"Flip", nextCardBtn:"Next →", shuffleBtn:"🔀 Shuffle",
+    supportIntro:"This tool is free. No login, no paywall, no catch. I built it to help you learn on the go, right from your phone, in between our once-a-week class.",
+    supportIntro2:"If it's helping you study, a small donation goes straight toward building the next week's material. That's how this stays free for every classmate who takes this class after you.",
+    supportHeading:"💛 Help build the next week",
+    donateNudge:"This tool is free and always will be. If it helped you study, consider tossing a few dollars toward the next week. 🦉",
+    cashapp:"Cash App", zelle:"Zelle",
+    footer:"Made by a classmate, for classmates.",
+    close:"Close", selectModule:"Week", allSections:"All sections", readAloud:"🔊 Read aloud",
+    reviewLabel:"Answer review", yourAnswer:"Your answer", correctAnswer:"Correct answer",
+    continueLabel:"Continue where you left off", quickReviewTitle:"⚡ Quick Review",
+    quickReviewSub:"10 random questions from everything you've covered",
+    missedReviewTitle:"🔁 Review missed questions", missedReviewSub:(n)=>`${n} question${n===1?'':'s'} you got wrong before — get them right to clear them`,
+    streakLine:(n)=>`🔥 ${n} day${n===1?'':'s'} studied so far`,
+    onboardTitle:"Quick tips before you start", onboardBody:
+`• Tap any underlined word for a quick definition, you won't lose your place.
+• Flashcards: tap the card to flip between question and answer.
+• On the Week Test and Cumulative Review, answers are revealed together at the end, so you can review everything at once.
+• Miss a question? It gets added to "Review missed questions" on the home screen so you can come back to it.
+• Use the "Aa" and 🌙 buttons up top to adjust text size and switch between light and dark.
+• This class meets once a week and quizzes are open-book in class — this tool is here so the material is already familiar when you walk in, not a replacement for the textbook.`,
+    onboardClose:"Got it, let's go"
+  },
+  es:{
+    subtitle:"Lectura de Planos para Construcción Residencial y Comercial Ligera — herramienta gratuita de estudio, semana a semana",
+    tabHome:"Semanas", tabCards:"Tarjetas", tabSupport:"Apoyar",
+    homeIntro:"Todas las semanas y sus exámenes están abiertos, pasa a lo que necesites estudiar. Esto no son calificaciones oficiales, solo una meta personal: apunta a 80%+ en las secciones y exámenes de semana antes de avanzar. Hay un Repaso Acumulativo después de la Semana 2 que cubre todo lo visto hasta ahora.",
+    glossaryHint:"Consejo: cualquier palabra subrayada se puede tocar para ver una definición rápida sin perder tu lugar.",
+    locked:"Bloqueado", unlocked:"Desbloqueado", completed:"Completado", comingSoon:"Próximamente", inProgress:"En progreso",
+    openModule:"Abrir", backToModules:"← Volver a las semanas",
+    scoreLabel:"Mejor puntaje", notStarted:"No iniciado", passed:"Aprobado", tryAgainSection:"Menos de 80% — inténtalo de nuevo", tryAgainTest:"Menos de 80% — inténtalo de nuevo",
+    startBtn:"Comenzar cuestionario", question:"Pregunta", of:"de",
+    nextBtn:"Siguiente pregunta", finishBtn:"Ver resultados",
+    yourScore:"Tu puntaje",
+    passMsgSection:"¡Bien hecho, aprobaste esta sección! Repítela cuando quieras — la meta no es solo el puntaje, es dominar este material antes de clase.",
+    passMsgTest:"¡Aprobaste! Puedes repetirlo cuando quieras para reforzar aún más lo que aprendiste.",
+    failMsgSection:"Todavía no llegas al 80%, y está bien — esto es para aprender, no para juzgarte.",
+    failMsgTest:"Todavía no llegas al 80%, y está bien — esto es para aprender, no para juzgarte.",
+    retakeEncourage:"Repítelo las veces que necesites. La meta real es entender este capítulo, no solo pasar un número.",
+    retakeTips:"Para mejorar la próxima vez: lee con cuidado cada explicación de abajo (sobre todo en las que fallaste), toca cualquier palabra subrayada para ver su definición, y no adivines. Si una pregunta te cuesta, eso es justo lo que debes releer en el libro antes de repetir el examen.",
+    retakeBtn:"Repetir", backHome:"🏠 Inicio",
+    typeTagFill:"Completa el espacio", typeTagMatch:"Relacionar",
+    matchHint:"Toca un término a la izquierda y luego su pareja a la derecha.",
+    moduleTestLockedMsg:"Obtén 80%+ en todas las secciones de esta semana para desbloquear su examen.",
+    moduleTestLabel:"Examen de la Semana", startTest:"Comenzar examen de la semana", passThreshold:"Meta: 80%+",
+    sectionThreshold:"Meta: 80%+",
+    startsOn:"Fecha de clase", startedOn:"Visto en clase", examOn:"Repasa antes de", examToday:"¡La próxima clase es hoy!",
+    examInDays:(n)=> n===1 ? "Próxima clase en 1 día" : `Próxima clase en ${n} días`,
+    addToCalendar:"📅 Agregar al calendario", icsStartSummary:(num)=>`Comienza la Semana ${num} de Lectura de Planos`,
+    icsStartDesc:(title)=>`Es hora de empezar a estudiar ${title} en la herramienta de estudio de Lectura de Planos.`,
+    icsStudySummary:(num)=>`¡Estudia la Semana ${num} antes de clase!`,
+    icsStudyDesc:(title,examDate)=>`${title} se discute en clase el ${examDate}. Abre la herramienta de estudio y repasa las secciones + tarjetas antes de esa fecha.`,
+    icsExamSummary:(num)=>`Semana ${num} — próxima clase`,
+    icsExamDesc:(title)=>`Día de clase para ${title}. Lleva tu libro de texto, tu escala y cualquier tarea pendiente.`,
+    icsLinkLabel:"Enlace a la herramienta de estudio",
+    studyPrefTitle:"¿Cuándo te gusta estudiar?",
+    studyPrefIntro:"Elige una hora y armamos tus recordatorios de estudio alrededor de ella. Como esta clase es solo una vez por semana, repartir un par de sesiones cortas de repaso durante la semana funciona mejor para recordar el material que una sola sesión de último momento la noche anterior. Solo necesitas configurar esto una vez; cada semana lo reutilizará.",
+    studyPrefTimeLabel:"¿A qué hora del día?",
+    studyPrefCadenceLabel:"¿Cómo quieres repartir los recordatorios?",
+    cadenceSpacedTitle:"Dos recordatorios (recomendado)", cadenceSpacedSub:"Un recordatorio 3 días antes de tu próxima clase, y otro un día antes — buen espaciado sin exagerar para una clase de una vez por semana.",
+    cadenceSingleTitle:"Solo un recordatorio", cadenceSingleSub:"Un solo recordatorio un día antes de tu próxima clase.",
+    studyPrefSave:"Guardar y agregar al calendario", studyPrefCancel:"Cancelar",
+    changeStudyTime:"⏰ Configurar hora de estudio",
+    estStudyTime:(mins)=> `⏱️ Unos ${mins} min para repasar esta semana`,
+    icsStudyReminderTitle:(num,mins)=>`Estudia la Semana ${num} (~${mins} min)`,
+    cumulativeLabel:"Repaso Acumulativo", cumulativeLockedMsg:"Termina esta semana (todas las secciones + su examen) para desbloquear este repaso.",
+    cumulativeAvailMsg:"Cubre todo hasta esta semana. Apunta a 80%+ antes de pasar a la siguiente semana.",
+    startCumulative:"Comenzar repaso acumulativo",
+    flipHint:"Toca la tarjeta para voltear", flipBackHint:"Toca para voltear de nuevo",
+    prevBtn:"← Anterior", flipBtn:"Voltear", nextCardBtn:"Siguiente →", shuffleBtn:"🔀 Mezclar",
+    supportIntro:"Esta herramienta es gratuita. Sin inicio de sesión, sin muro de pago, sin trampa. La construí para ayudarte a aprender sobre la marcha, directo desde tu teléfono, entre nuestra clase de una vez por semana.",
+    supportIntro2:"Si te está ayudando a estudiar, una pequeña donación va directo a construir el material de la próxima semana. Así es como esto se mantiene gratis para cada compañero que tome esta clase después de ti.",
+    supportHeading:"💛 Ayuda a construir la próxima semana",
+    donateNudge:"Esta herramienta es gratis y siempre lo será. Si te ayudó a estudiar, considera aportar unos dólares para la próxima semana. 🦉",
+    cashapp:"Cash App", zelle:"Zelle",
+    footer:"Hecho por un compañero de clase, para compañeros de clase.",
+    close:"Cerrar", selectModule:"Semana", allSections:"Todas las secciones", readAloud:"🔊 Leer en voz alta",
+    reviewLabel:"Repaso de respuestas", yourAnswer:"Tu respuesta", correctAnswer:"Respuesta correcta",
+    continueLabel:"Continuar donde lo dejaste", quickReviewTitle:"⚡ Repaso Rápido",
+    quickReviewSub:"10 preguntas al azar de todo lo que has visto",
+    missedReviewTitle:"🔁 Repasar preguntas falladas", missedReviewSub:(n)=>`${n} pregunta${n===1?'':'s'} que fallaste antes — acértalas para quitarlas de la lista`,
+    streakLine:(n)=>`🔥 ${n} día${n===1?'':'s'} de estudio hasta ahora`,
+    onboardTitle:"Consejos rápidos antes de empezar", onboardBody:
+`• Toca cualquier palabra subrayada para ver una definición rápida, sin perder tu lugar.
+• Tarjetas: toca la tarjeta para voltear entre pregunta y respuesta.
+• En el Examen de la Semana y el Repaso Acumulativo, las respuestas se revelan todas juntas al final, para que puedas repasar todo de una vez.
+• ¿Fallaste una pregunta? Se agrega a "Repasar preguntas falladas" en la pantalla principal para que puedas volver a ella.
+• Usa los botones "Aa" y 🌙 arriba para ajustar el tamaño del texto y cambiar entre modo claro y oscuro.
+• Esta clase es una vez por semana y los exámenes son con libro abierto en clase — esta herramienta existe para que el material ya te sea familiar cuando llegues, no para reemplazar el libro de texto.`,
+    onboardClose:"Entendido, vamos"
+  }
+};
+
+/* ============ GLOSSARY ============ */
+const GLOSSARY = {
+  owner:{en:{term:"owner",def:"The purchaser of a construction project — reviews design drafts, discusses budget, and approves plans before construction can begin."},es:{term:"dueño",def:"El comprador de un proyecto de construcción — revisa los borradores de diseño, discute el presupuesto y aprueba los planos antes de que comience la construcción."}},
+  architect:{en:{term:"architect",def:"A professional who designs a structure and prepares plans for a specific client, ensuring the design meets zoning ordinances, building codes, and the owner's needs."},es:{term:"arquitecto",def:"Un profesional que diseña una estructura y prepara los planos para un cliente específico, asegurando que el diseño cumpla con las ordenanzas de zonificación, los códigos de construcción y las necesidades del dueño."}},
+  generalContractor:{en:{term:"general contractor",def:"A person or company that agrees to construct a building according to the plans and specifications, and may perform some work itself or hire subcontractors."},es:{term:"contratista general",def:"Una persona o empresa que se compromete a construir un edificio según los planos y especificaciones, y puede realizar parte del trabajo o contratar subcontratistas."}},
+  subcontractor:{en:{term:"subcontractor",def:"A person or company that agrees with the general contractor to install a specific type of work, such as electrical, plumbing, or HVAC."},es:{term:"subcontratista",def:"Una persona o empresa que acuerda con el contratista general instalar un tipo específico de trabajo, como eléctrico, plomería o HVAC."}},
+  supplier:{en:{term:"supplier",def:"Provides materials for a construction project. Suppliers use working drawings and specifications to determine material quantities and estimate costs."},es:{term:"proveedor",def:"Suministra materiales para un proyecto de construcción, usando los planos y especificaciones para calcular las cantidades y estimar costos."}},
+  tradesworker:{en:{term:"tradesworker",def:"A worker with the knowledge and experience in a particular area of construction, governed by working drawings, prints, and specifications."},es:{term:"trabajador de oficio",def:"Un trabajador con conocimiento y experiencia en un área particular de la construcción, guiado por los planos y especificaciones."}},
+  designBuild:{en:{term:"design-build",def:"A project delivery system in which the owner contracts directly with one firm that provides both design and construction services."},es:{term:"diseño-construcción",def:"Un sistema de entrega de proyecto en el que el dueño contrata directamente a una firma que ofrece tanto diseño como construcción."}},
+  rfp:{en:{term:"RFP (Request for Proposal)",def:"A formal document used to solicit proposals from contractors for a project, describing the scope of work, budget, and range of dates."},es:{term:"RFP (Solicitud de Propuesta)",def:"Un documento formal usado para solicitar propuestas de contratistas para un proyecto, describiendo el alcance del trabajo, presupuesto y fechas."}},
+  cad:{en:{term:"CAD",def:"Computer-aided design — creating working drawings using conventional drafting tools that have been computerized, like squares and scales."},es:{term:"CAD",def:"Diseño asistido por computadora — crear planos usando herramientas de dibujo tradicionales digitalizadas."}},
+  bim:{en:{term:"BIM",def:"Building information modeling — an integrated system that takes all construction components into account and can flag clashes between building components before construction."},es:{term:"BIM",def:"Modelado de información de construcción — un sistema integrado que toma en cuenta todos los componentes de la construcción y puede identificar conflictos antes de la construcción."}},
+  isometricDrawing:{en:{term:"isometric drawing",def:"A pictorial drawing in which the three principal axes are 120° apart, commonly used for piping diagrams."},es:{term:"dibujo isométrico",def:"Un dibujo pictórico en el que los tres ejes principales están separados 120°, usado comúnmente para diagramas de tuberías."}},
+  perspectiveDrawing:{en:{term:"perspective drawing",def:"The most realistic type of pictorial drawing, showing an object as it appears when viewed from a given point — commonly used for artist's renderings."},es:{term:"dibujo en perspectiva",def:"El tipo más realista de dibujo pictórico, que muestra un objeto tal como aparece visto desde un punto dado — usado comúnmente en representaciones de artista."}},
+  orthographicProjection:{en:{term:"orthographic projection",def:"A drawing in which all faces of an object are projected onto flat planes, generally at 90° to one another; also called a multiview drawing."},es:{term:"proyección ortográfica",def:"Un dibujo en el que todas las caras de un objeto se proyectan sobre planos planos, generalmente a 90° entre sí; también llamado dibujo de múltiples vistas."}},
+  scale:{en:{term:"scale",def:"The relative size to which an object is drawn — working drawings must be created large enough to clearly show all necessary information."},es:{term:"escala",def:"El tamaño relativo al que se dibuja un objeto — los planos deben crearse lo suficientemente grandes para mostrar claramente toda la información necesaria."}},
+  architectsScale:{en:{term:"architect's scale",def:"A tool used to draw and measure objects at a particular size — triangular in cross section, with six faces and two scales per face."},es:{term:"escala de arquitecto",def:"Una herramienta para dibujar y medir objetos a un tamaño particular — de sección triangular, con seis caras y dos escalas por cara."}},
+  engineersScale:{en:{term:"engineer's scale",def:"A triangular, six-sided scale used to draw and measure large areas such as building lots on plot plans (scales like 1\"=10', 1\"=20', etc.)."},es:{term:"escala de ingeniero",def:"Una escala triangular de seis caras usada para dibujar y medir áreas grandes como lotes en planos de sitio."}},
+  objectLine:{en:{term:"object line",def:"The most common line type used on prints — a thick, solid line showing edges or shapes that create visible lines on an object."},es:{term:"línea de objeto",def:"El tipo de línea más común en los planos — una línea gruesa y continua que muestra bordes o formas visibles de un objeto."}},
+  hiddenLine:{en:{term:"hidden line",def:"A thin line made of short, evenly spaced dashes, showing features that are not visible, such as those below a surface or behind an object."},es:{term:"línea oculta",def:"Una línea delgada hecha de guiones cortos y espaciados uniformemente, que muestra características no visibles."}},
+  centerline:{en:{term:"centerline",def:"A thin line, alternating long and short dashes, that indicates the center of symmetrical objects such as arcs, circles, and columns."},es:{term:"línea central",def:"Una línea delgada, alternando guiones largos y cortos, que indica el centro de objetos simétricos como arcos, círculos y columnas."}},
+  dimensionLine:{en:{term:"dimension line",def:"A thin line, terminated by arrowheads, slashes, or dots, that shows the size or location of a feature."},es:{term:"línea de dimensión",def:"Una línea delgada, terminada por flechas, diagonales o puntos, que muestra el tamaño o ubicación de una característica."}},
+  extensionLine:{en:{term:"extension line",def:"A thin line projecting from a feature being dimensioned, used to define size or location along with dimension lines."},es:{term:"línea de extensión",def:"Una línea delgada que se proyecta desde una característica que se está acotando, usada para definir tamaño o ubicación."}},
+  leaderLine:{en:{term:"leader",def:"A thin line, terminated by an arrowhead or dot, used to call out specific features on a drawing."},es:{term:"línea de referencia (leader)",def:"Una línea delgada, terminada por una flecha o punto, usada para señalar características específicas de un dibujo."}},
+  cuttingPlane:{en:{term:"cutting plane",def:"A thick line indicating internal features — shows where a section has been taken through a building or component to reveal greater detail."},es:{term:"plano de corte",def:"Una línea gruesa que indica características internas — muestra dónde se ha tomado una sección para revelar mayor detalle."}},
+  plotPlan:{en:{term:"plot plan",def:"A scaled working drawing that shows the shape and size of a building lot, the location and size of a building on the lot, and the finished floor elevation."},es:{term:"plano de sitio (plot plan)",def:"Un plano a escala que muestra la forma y tamaño de un lote, la ubicación y tamaño de un edificio en el lote, y la elevación del piso terminado."}},
+  pob:{en:{term:"point of beginning (POB)",def:"A fixed location on a building site used as a reference point for horizontal and vertical dimensions, related to a benchmark or city datum point."},es:{term:"punto de partida (POB)",def:"Una ubicación fija en el sitio de construcción usada como punto de referencia para dimensiones horizontales y verticales."}},
+  benchmark:{en:{term:"benchmark",def:"A concrete marker within sighting distance of a lot — a mark on a fire hydrant, sewer grate, or other point established by the city as a local reference."},es:{term:"punto de referencia (benchmark)",def:"Un marcador de concreto a distancia de vista de un lote, establecido por la ciudad como referencia local."}},
+  contourLine:{en:{term:"contour line",def:"A dashed or solid line on a plot plan that passes through points of the same elevation, showing the slope of a lot."},es:{term:"línea de contorno",def:"Una línea discontinua o continua en un plano de sitio que pasa por puntos de la misma elevación, mostrando la pendiente del lote."}},
+  setback:{en:{term:"setback",def:"The minimum distance required by zoning ordinances between a street, sidewalk, or property line and a building."},es:{term:"retiro (setback)",def:"La distancia mínima requerida por las ordenanzas de zonificación entre una calle, acera o línea de propiedad y un edificio."}},
+  floorPlan:{en:{term:"floor plan",def:"A plan view of a building showing the arrangement of walls and partitions as they appear in an imaginary horizontal section taken about 5'-0\" above floor level."},es:{term:"plano de planta",def:"Una vista en planta de un edificio que muestra la disposición de muros y particiones, tomada en una sección horizontal imaginaria a unos 5'-0\" sobre el piso."}},
+  elevation:{en:{term:"elevation",def:"A scaled view looking directly at a vertical surface of a building — front, rear, right side, and left side are the most common."},es:{term:"elevación",def:"Una vista a escala mirando directamente a una superficie vertical de un edificio — frontal, trasera, derecha e izquierda son las más comunes."}},
+  section:{en:{term:"section",def:"A scaled view created by passing a cutting plane either horizontally or vertically through a portion of a building to show features not apparent in plan or elevation views."},es:{term:"sección",def:"Una vista a escala creada al pasar un plano de corte por una parte de un edificio para mostrar detalles no visibles en las vistas de planta o elevación."}},
+  detail:{en:{term:"detail",def:"A scaled plan view, elevation, or section produced at a larger scale to clearly show special features that can't be shown on standard working drawings."},es:{term:"detalle",def:"Una vista, elevación o sección a mayor escala para mostrar claramente características especiales."}},
+  titleBlock:{en:{term:"title block",def:"The section of a print, usually in a lower corner, containing the project name and location, architect's name, plan completion date, sheet number, and other information."},es:{term:"cuadro de título (title block)",def:"La sección de un plano, usualmente en una esquina, que contiene el nombre y ubicación del proyecto, el nombre del arquitecto, fecha y número de hoja."}},
+  abbreviation:{en:{term:"abbreviation",def:"A letter or series of letters denoting a complete word, used to prevent clutter on working drawings — only uppercase letters are used."},es:{term:"abreviatura",def:"Una letra o serie de letras que representan una palabra completa, usada para evitar saturar los planos."}},
+  symbol:{en:{term:"symbol",def:"A pictorial representation of a structural or material component used on a print, allowing building parts to be shown at scale consistently."},es:{term:"símbolo",def:"Una representación pictórica de un componente estructural o material usado en un plano."}},
+  schedule:{en:{term:"schedule",def:"A detailed list on a set of prints that provides information about building components such as windows, doors, and mechanical equipment."},es:{term:"programa (schedule)",def:"Una lista detallada en un juego de planos que da información sobre componentes como ventanas, puertas y equipo mecánico."}},
+  fixedSashWindow:{en:{term:"fixed-sash window",def:"A window in which the sash is inoperable — usually large and often fitted with insulating glass."},es:{term:"ventana de hoja fija",def:"Una ventana cuya hoja no se puede abrir — generalmente grande y con vidrio aislante."}},
+  slidingSashWindow:{en:{term:"sliding-sash window",def:"A window in which the sashes can be moved vertically or horizontally past one another, including double-hung and horizontal sliding windows."},es:{term:"ventana corrediza",def:"Una ventana cuyas hojas se pueden mover vertical u horizontalmente una sobre otra."}},
+  swingingSashWindow:{en:{term:"swinging-sash window",def:"A window in which the sash pivots to provide ventilation, including casement, awning, and hopper windows."},es:{term:"ventana batiente",def:"Una ventana cuya hoja gira para proporcionar ventilación, incluyendo ventanas de proyección, toldo y hopper."}},
+  mullion:{en:{term:"mullion",def:"A vertical member of a window frame between the sashes, used when combining multiple windows in the same frame."},es:{term:"parteluz (mullion)",def:"Un miembro vertical del marco de una ventana entre las hojas, usado al combinar varias ventanas en el mismo marco."}},
+  doorHand:{en:{term:"door hand",def:"The direction in which a door swings, determined by standing on the outside of the door — the side of the hallway or street."},es:{term:"lado de apertura (door hand)",def:"La dirección en la que se abre una puerta, determinada al pararse en el exterior de la puerta."}},
+  solidCoreDoor:{en:{term:"solid-core door",def:"A wood door with a core constructed of solid wood blocks or particleboard glued together — heavier, weather-resistant, and commonly used for exterior openings."},es:{term:"puerta de núcleo sólido",def:"Una puerta de madera con núcleo de bloques de madera sólida o aglomerado — más pesada y resistente al clima."}},
+  hollowCoreDoor:{en:{term:"hollow-core door",def:"A wood door with a core of corrugated fiber covered with veneer plies — lighter weight, not permitted for exterior openings."},es:{term:"puerta de núcleo hueco",def:"Una puerta de madera con núcleo de fibra corrugada — más liviana, no permitida en aberturas exteriores."}},
+  fireDoor:{en:{term:"fire door",def:"A fire-resistant door and assembly, including frame and hardware, classified A through E based on how long it withstands failure and penetration by fire."},es:{term:"puerta cortafuego",def:"Una puerta y ensamble resistente al fuego, clasificada de A a E según el tiempo que resiste el fuego."}},
+  stairRatio:{en:{term:"stair ratio",def:"The relationship between riser height (R) and tread width (T) in a stairway, per formulas like T+R = 17\" to 18\"."},es:{term:"relación de escalera",def:"La relación entre la altura de contrahuella (R) y el ancho de huella (T) en una escalera."}},
+  totalRise:{en:{term:"total rise",def:"The vertical distance from the surface of the lower floor to the surface of the floor above in a stairway."},es:{term:"altura total (total rise)",def:"La distancia vertical desde la superficie del piso inferior hasta la superficie del piso superior en una escalera."}},
+  totalRun:{en:{term:"total run",def:"The horizontal distance from the face of the bottom riser to the face of the top riser in a stairway."},es:{term:"longitud total (total run)",def:"La distancia horizontal desde la cara de la contrahuella inferior hasta la cara de la contrahuella superior."}},
+  handrail:{en:{term:"handrail",def:"A rail required on stairways with two or more risers, with height, projection, and cross-section dimensions set by building code."},es:{term:"pasamanos",def:"Un riel requerido en escaleras con dos o más contrahuellas, con dimensiones de altura y proyección establecidas por el código de construcción."}}
+};
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function annotate(text){
+  const entries = Object.keys(GLOSSARY).map(k=>({key:k, pattern: GLOSSARY[k][lang].term}));
+  entries.sort((a,b)=> b.pattern.length - a.pattern.length);
+  const alternation = entries.map(e=> escapeRegExp(e.pattern)).join('|');
+  const re = new RegExp('\\b(' + alternation + ')\\b', 'gi');
+  return text.replace(re, (match)=>{
+    const found = entries.find(e=> e.pattern.toLowerCase() === match.toLowerCase());
+    return `<span class="glossary-term" data-term="${found?found.key:''}">${match}</span>`;
+  });
+}
+function attachGlossaryHandlers(container){
+  container.querySelectorAll('.glossary-term').forEach(el=>{
+    el.addEventListener('click', function(e){ e.stopPropagation(); openGlossary(this.dataset.term); });
+  });
+}
+function openGlossary(key){
+  const g = GLOSSARY[key]; if(!g) return;
+  document.getElementById('glossTermText').textContent = g[lang].term;
+  document.getElementById('glossDefText').textContent = g[lang].def;
+  document.getElementById('glossaryOverlay').style.display = 'flex';
+}
+function closeGlossary(){ document.getElementById('glossaryOverlay').style.display='none'; }
+
+/* ============ STUDY TIME / CADENCE PREFERENCE MODAL ============ */
+// onSave (optional): called after the person hits Save, with nothing to pass —
+// read prefs back out via getStudyPrefs(). Used so "Add to calendar" can chain
+// straight into a download the very first time, with no extra click needed.
+function openStudyPrefModal(onSave){
+  const existing = getStudyPrefs();
+  document.getElementById('studyPrefTitle').textContent = t('studyPrefTitle');
+  document.getElementById('studyPrefIntro').textContent = t('studyPrefIntro');
+  document.getElementById('studyPrefTimeLabel').textContent = t('studyPrefTimeLabel');
+  document.getElementById('studyPrefCadenceLabel').textContent = t('studyPrefCadenceLabel');
+  document.getElementById('studyPrefSaveBtn').textContent = t('studyPrefSave');
+  document.getElementById('studyPrefCancelBtn').textContent = t('studyPrefCancel');
+  document.getElementById('studyPrefTimeInput').value = existing ? existing.time : '19:00';
+  const cadence = existing ? existing.cadence : 'spaced';
+  const opts = [
+    {key:'spaced', title:t('cadenceSpacedTitle'), sub:t('cadenceSpacedSub')},
+    {key:'single', title:t('cadenceSingleTitle'), sub:t('cadenceSingleSub')}
+  ];
+  document.getElementById('studyPrefCadenceOpts').innerHTML = opts.map(o=>`
+    <label class="pref-cadence-opt">
+      <input type="radio" name="studyCadence" value="${o.key}" ${cadence===o.key?'checked':''}>
+      <div><div class="pco-title">${o.title}</div><div class="pco-sub">${o.sub}</div></div>
+    </label>
+  `).join('');
+  document.getElementById('studyPrefOverlay').style.display = 'flex';
+  document.getElementById('studyPrefSaveBtn').onclick = ()=>{
+    const time = document.getElementById('studyPrefTimeInput').value || '19:00';
+    const cadenceSel = document.querySelector('input[name="studyCadence"]:checked');
+    saveStudyPrefs({time, cadence: cadenceSel ? cadenceSel.value : 'spaced'});
+    document.getElementById('studyPrefOverlay').style.display = 'none';
+    if(onSave) onSave();
+  };
+  document.getElementById('studyPrefCancelBtn').onclick = ()=>{
+    document.getElementById('studyPrefOverlay').style.display = 'none';
+  };
+}
+
+/* ============ READ ALOUD (TEXT-TO-SPEECH) ============ */
+function stripHtml(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(stripHtml(text));
+  utter.lang = lang==='es' ? 'es-ES' : 'en-US';
+  utter.rate = 0.95;
+  window.speechSynthesis.speak(utter);
+}
+function stopSpeaking(){ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }
+
+/* ============ MODULE 1 CONTENT ============ */
+/* ============ WEEK 1 CONTENT: Orthographic Projections & Types of Drawings ============ */
+const W1_SECTION1 = [
+  {en:{q:"Who is the initiator of a construction project and usually finances the building endeavor?",opts:["The owner","The general contractor","The supplier","The crew leader"],c:0,exp:"The owner (or project owner) initiates the project, reviews design drafts, and approves the plans and budget before construction can begin."},
+   es:{q:"¿Quién es el iniciador de un proyecto de construcción y generalmente financia la obra?",opts:["El dueño","El contratista general","El proveedor","El líder de cuadrilla"],c:0,exp:"El dueño inicia el proyecto, revisa los borradores de diseño y aprueba los planos y el presupuesto antes de que comience la construcción."}},
+  {en:{q:"Which professional designs a building and ensures the design meets zoning ordinances and building codes?",opts:["The architect","The subcontractor","The supplier","The tradesworker"],c:0,exp:"The architect designs the structure for a specific client and must comply with all zoning ordinances and building codes when creating plot plans and other drawings."},
+   es:{q:"¿Qué profesional diseña un edificio y se asegura de que el diseño cumpla con las ordenanzas de zonificación y los códigos de construcción?",opts:["El arquitecto","El subcontratista","El proveedor","El trabajador de oficio"],c:0,exp:"El arquitecto diseña la estructura para un cliente específico y debe cumplir con las ordenanzas de zonificación y los códigos de construcción."}},
+  {type:'fillBlank', en:{q:"A ___ is hired by the general contractor to install one specific type of work, such as electrical or plumbing.",opts:["subcontractor","supplier","owner","architect"],c:0,exp:"A subcontractor agrees with the general contractor to install a specific type of work — electrical, plumbing, HVAC, and so on."},
+   es:{q:"Un ___ es contratado por el contratista general para instalar un tipo específico de trabajo, como eléctrico o plomería.",opts:["subcontratista","proveedor","dueño","arquitecto"],c:0,exp:"Un subcontratista acuerda con el contratista general instalar un tipo específico de trabajo."}},
+  {en:{q:"In a design-build project delivery system, the owner ________.",opts:["contracts with a single firm that provides both design and construction services","must hire a separate architect and separate contractor","never sees a Request for Proposal","only deals with local building officials"],c:0,exp:"Design-build lets an owner choose a contractor from among several submissions received in response to an RFP, and that one firm handles both design and construction."},
+   es:{q:"En un sistema de entrega de proyecto de diseño-construcción, el dueño ________.",opts:["contrata con una sola firma que ofrece diseño y construcción","debe contratar un arquitecto y un contratista por separado","nunca ve una Solicitud de Propuesta","solo trata con funcionarios de construcción locales"],c:0,exp:"En diseño-construcción, el dueño elige un contratista entre varias propuestas recibidas en respuesta a una RFP, y esa firma se encarga de diseño y construcción."}},
+  {en:{q:"An RFP, or Request for Proposal, is used to ________.",opts:["solicit proposals from contractors describing the scope of work and budget","record a building's final inspection results","list every tradesworker on a job site","replace the need for a building permit"],c:0,exp:"An RFP is a formal document owners use to solicit proposals from contractors, describing the scope of work, budget, and range of dates for a project."},
+   es:{q:"Una RFP, o Solicitud de Propuesta, se usa para ________.",opts:["solicitar propuestas de contratistas describiendo el alcance del trabajo y presupuesto","registrar los resultados de la inspección final de un edificio","listar a cada trabajador de oficio en un sitio","reemplazar la necesidad de un permiso de construcción"],c:0,exp:"Una RFP es un documento formal que los dueños usan para solicitar propuestas de contratistas, describiendo el alcance del trabajo, presupuesto y fechas."}},
+  {en:{q:"Building officials review drawings, prints, and specifications mainly to ________.",opts:["ensure compliance with electrical, building, fire, and zoning codes before issuing a permit","design the building's floor plan","supply lumber and other materials","negotiate the general contractor's fee"],c:0,exp:"Local building officials review submitted drawings for code compliance and approve them before a building permit is issued and construction can begin."},
+   es:{q:"Los funcionarios de construcción revisan los planos y especificaciones principalmente para ________.",opts:["asegurar el cumplimiento de los códigos eléctricos, de construcción, incendios y zonificación antes de emitir un permiso","diseñar el plano de planta del edificio","suministrar madera y otros materiales","negociar la tarifa del contratista general"],c:0,exp:"Los funcionarios de construcción revisan los planos para verificar el cumplimiento de los códigos antes de emitir un permiso de construcción."}},
+  {type:'match', en:{prompt:"Match each project role to what it does.", pairs:[
+      {term:"General contractor", def:"Agrees to construct a building according to the plans, may hire subcontractors"},
+      {term:"Supplier", def:"Provides materials, using drawings to estimate quantities and costs"},
+      {term:"Tradesworker", def:"Has the knowledge and experience for a particular area of construction"},
+      {term:"Building official", def:"Reviews prints for code compliance and issues the building permit"}
+    ], exp:"These four roles all rely on the same set of prints and specifications, but use them for different purposes — construction, ordering materials, doing the actual work, and approving the project to proceed."},
+   es:{prompt:"Relaciona cada rol del proyecto con lo que hace.", pairs:[
+      {term:"Contratista general", def:"Se compromete a construir un edificio según los planos, puede contratar subcontratistas"},
+      {term:"Proveedor", def:"Suministra materiales, usando los planos para estimar cantidades y costos"},
+      {term:"Trabajador de oficio", def:"Tiene el conocimiento y la experiencia para un área particular de la construcción"},
+      {term:"Funcionario de construcción", def:"Revisa los planos para el cumplimiento del código y emite el permiso"}
+    ], exp:"Estos cuatro roles dependen del mismo juego de planos y especificaciones, pero los usan con propósitos distintos."}},
+  {en:{q:"What does CAD stand for?",opts:["Computer-aided design","Construction Assembly Diagram","Certified Architectural Drawing","Cutting And Detailing"],c:0,exp:"CAD, computer-aided design, uses computerized drafting tools — like squares, scales, and compasses — to create working drawings."},
+   es:{q:"¿Qué significa CAD?",opts:["Diseño asistido por computadora","Diagrama de Ensamble de Construcción","Dibujo Arquitectónico Certificado","Corte Y Detallado"],c:0,exp:"CAD, diseño asistido por computadora, usa herramientas de dibujo digitalizadas para crear planos."}},
+  {en:{q:"What advantage does BIM (building information modeling) have over conventional CAD drawing?",opts:["It can automatically flag clashes between building components before construction","It eliminates the need for a title block","It replaces the need for an architect","It only works on residential projects"],c:0,exp:"BIM software can identify areas of inconsistency or clashes between building components automatically, resolving them before construction begins — something conventional 2D CAD drawings can't easily do."},
+   es:{q:"¿Qué ventaja tiene BIM sobre el dibujo CAD convencional?",opts:["Puede identificar automáticamente conflictos entre componentes antes de la construcción","Elimina la necesidad de un cuadro de título","Reemplaza la necesidad de un arquitecto","Solo funciona en proyectos residenciales"],c:0,exp:"El software BIM puede identificar automáticamente áreas de inconsistencia o conflictos entre componentes de construcción antes de que comience la construcción."}},
+  {en:{q:"True or False: Wide-format inkjet printers can now produce prints of similar quality to traditional photostatic printers.",opts:["True","False"],c:0,exp:"True — modern wide-format digital printers produce the majority of construction prints today, quickly and accurately."},
+   es:{q:"Verdadero o falso: las impresoras de inyección de tinta de formato ancho ahora pueden producir planos de calidad similar a las fotostáticas tradicionales.",opts:["Verdadero","Falso"],c:0,exp:"Verdadero — las impresoras digitales de formato ancho modernas producen hoy la mayoría de los planos de construcción, de forma rápida y precisa."}}
+];
+const W1_SECTION2 = [
+  {en:{q:"Pictorial drawings, such as isometric and perspective drawings, show ________.",opts:["height, length, and depth all in one drawing","only two dimensions at a time","only the floor plan of a building","the same view as an orthographic projection"],c:0,exp:"Pictorial drawings show all three principal measurements — height, length, and depth — in a single drawing, giving a sense of realism to the object being viewed."},
+   es:{q:"Los dibujos pictóricos, como los isométricos y en perspectiva, muestran ________.",opts:["altura, longitud y profundidad en un solo dibujo","solo dos dimensiones a la vez","solo el plano de planta de un edificio","la misma vista que una proyección ortográfica"],c:0,exp:"Los dibujos pictóricos muestran las tres medidas principales (altura, longitud y profundidad) en un solo dibujo."}},
+  {en:{q:"In an isometric drawing, the three principal axes are separated by how many degrees?",opts:["90°","120°","60°","180°"],c:1,exp:"An isometric drawing's three principal axes are 120° apart, which is why it's commonly used for piping diagrams to depict arrangement realistically."},
+   es:{q:"En un dibujo isométrico, ¿cuántos grados separan los tres ejes principales?",opts:["90°","120°","60°","180°"],c:1,exp:"En un dibujo isométrico, los tres ejes principales están separados 120°, por eso se usa comúnmente para diagramas de tuberías."}},
+  {en:{q:"Which type of pictorial drawing is the most realistic, showing an object as it appears from a given viewpoint?",opts:["Perspective drawing","Isometric drawing","Orthographic projection","Section"],c:0,exp:"A perspective drawing is the most realistic type of pictorial drawing — it's commonly used as an artist's rendering to help an owner visualize the completed building."},
+   es:{q:"¿Qué tipo de dibujo pictórico es el más realista, mostrando un objeto tal como aparece desde un punto de vista dado?",opts:["Dibujo en perspectiva","Dibujo isométrico","Proyección ortográfica","Sección"],c:0,exp:"Un dibujo en perspectiva es el tipo más realista de dibujo pictórico — se usa comúnmente como representación de artista."}},
+  {type:'fillBlank', en:{q:"An orthographic projection is also called a ___ drawing, since a minimum of three views is typically used to describe an object.",opts:["multiview","isometric","perspective","pictorial"],c:0,exp:"Orthographic projection is also called multiview drawing — the front, top, and right side views are the most commonly shown, each in only two dimensions."},
+   es:{q:"Una proyección ortográfica también se llama dibujo ___, ya que se usa un mínimo de tres vistas para describir un objeto.",opts:["de múltiples vistas","isométrico","en perspectiva","pictórico"],c:0,exp:"La proyección ortográfica también se llama dibujo de múltiples vistas — las vistas frontal, superior y derecha son las más comunes."}},
+  {en:{q:"In orthographic projection, where is the top view always positioned relative to the front view?",opts:["Directly above the front view","Directly to the right of the front view","Directly below the front view","There is no fixed relationship"],c:0,exp:"In a standard multiview drawing, the top view is always directly above the front view, and the right side view is always directly to the right of the front view."},
+   es:{q:"En la proyección ortográfica, ¿dónde se ubica siempre la vista superior en relación con la vista frontal?",opts:["Directamente arriba de la vista frontal","Directamente a la derecha de la vista frontal","Directamente debajo de la vista frontal","No hay una relación fija"],c:0,exp:"En un dibujo de múltiples vistas estándar, la vista superior siempre está directamente arriba de la vista frontal."}},
+  {en:{q:"Working drawings for a building are drawn using ________.",opts:["orthographic projection techniques","only isometric drawings","only perspective renderings","freehand sketches with no scale"],c:0,exp:"Working drawings are drawn using orthographic projection — front, back, and side views of a building are drawn as elevations, and top views are drawn as plan views."},
+   es:{q:"Los planos de trabajo de un edificio se dibujan usando ________.",opts:["técnicas de proyección ortográfica","solo dibujos isométricos","solo representaciones en perspectiva","bocetos a mano sin escala"],c:0,exp:"Los planos de trabajo se dibujan usando proyección ortográfica — las vistas frontal, trasera y laterales se dibujan como elevaciones."}},
+  {en:{q:"A building information model (BIM) contains geometric information needed to build a structure and may also include ________.",opts:["job costs and scheduling data","only the artist's rendering","the owner's personal contact list","the general contractor's tax records"],c:0,exp:"A BIM contains the geometric information needed to build the structure, and can also include construction details, job costs, and scheduling data — allowing estimating and scheduling software to be integrated with the model."},
+   es:{q:"Un modelo de información de construcción (BIM) contiene la información geométrica necesaria para construir una estructura y también puede incluir ________.",opts:["costos de obra y datos de programación","solo la representación del artista","la lista de contactos personales del dueño","los registros fiscales del contratista general"],c:0,exp:"Un BIM contiene la información geométrica necesaria para construir la estructura, y también puede incluir costos de obra y datos de programación."}},
+  {type:'match', en:{prompt:"Match each drawing type to its description.", pairs:[
+      {term:"Isometric drawing", def:"Pictorial drawing with three axes 120° apart, often used for piping"},
+      {term:"Perspective drawing", def:"The most realistic pictorial drawing, shown from a given viewpoint"},
+      {term:"Orthographic projection", def:"Multiview drawing where each face is shown two-dimensionally"},
+      {term:"Working drawing", def:"A drawing created using orthographic projection to build from"}
+    ], exp:"Isometric and perspective drawings are both pictorial (showing all three dimensions at once), while orthographic projection is what working drawings are actually built from — each view shown flat, two-dimensionally."},
+   es:{prompt:"Relaciona cada tipo de dibujo con su descripción.", pairs:[
+      {term:"Dibujo isométrico", def:"Dibujo pictórico con tres ejes separados 120°, usado a menudo para tuberías"},
+      {term:"Dibujo en perspectiva", def:"El dibujo pictórico más realista, mostrado desde un punto de vista dado"},
+      {term:"Proyección ortográfica", def:"Dibujo de múltiples vistas donde cada cara se muestra en dos dimensiones"},
+      {term:"Plano de trabajo", def:"Un dibujo creado usando proyección ortográfica para construir a partir de él"}
+    ], exp:"Los dibujos isométricos y en perspectiva son pictóricos (muestran las tres dimensiones a la vez), mientras que la proyección ortográfica es de lo que realmente se construyen los planos de trabajo."}},
+  {en:{q:"A section drawing is created by ________.",opts:["passing a cutting plane through a portion of a building to reveal internal detail","photographing the finished building","tracing an elevation onto translucent paper","listing door and window sizes in a table"],c:0,exp:"A section is a scaled view created by passing a cutting plane, horizontally or vertically, through a portion of a building — showing features that aren't apparent on plan views or elevations."},
+   es:{q:"Un dibujo de sección se crea al ________.",opts:["pasar un plano de corte por una parte de un edificio para revelar detalle interno","fotografiar el edificio terminado","calcar una elevación en papel translúcido","listar los tamaños de puertas y ventanas en una tabla"],c:0,exp:"Una sección es una vista a escala creada al pasar un plano de corte por una parte de un edificio, mostrando características que no son evidentes en las vistas de planta o elevaciones."}},
+  {en:{q:"Which of these is a real-world example given for BIM software catching a design error automatically?",opts:["If a door is added to a floor plan, it automatically appears on elevation views and the door schedule","It prevents contractors from ever changing a bid","It writes the specifications document for the architect","It automatically hires subcontractors"],c:0,exp:"One of BIM's biggest advantages is that a change made in one view (like adding a door to a floor plan) automatically updates every other related view and schedule, eliminating the errors that come from forgetting to redraw multiple views by hand."},
+   es:{q:"¿Cuál de estos es un ejemplo dado de cómo el software BIM detecta automáticamente un error de diseño?",opts:["Si se agrega una puerta al plano de planta, aparece automáticamente en las elevaciones y el programa de puertas","Evita que los contratistas cambien una oferta","Escribe el documento de especificaciones para el arquitecto","Contrata subcontratistas automáticamente"],c:0,exp:"Una de las mayores ventajas de BIM es que un cambio en una vista (como agregar una puerta) actualiza automáticamente todas las demás vistas relacionadas."}}
+];
+const W1_TEST = [
+  {en:{q:"A(n) ___° angle is formed between the axes in isometric drawings.",opts:["60","90","120","180"],c:2,exp:"Isometric drawings have three principal axes 120° apart."},
+   es:{q:"Se forma un ángulo de ___° entre los ejes en los dibujos isométricos.",opts:["60","90","120","180"],c:2,exp:"Los dibujos isométricos tienen tres ejes principales separados 120°."}},
+  {en:{q:"Orthographic projections are also referred to as ___ drawings.",opts:["multiview","isometric","perspective","freehand"],c:0,exp:"Orthographic projection = multiview drawing."},
+   es:{q:"Las proyecciones ortográficas también se conocen como dibujos ___.",opts:["de múltiples vistas","isométricos","en perspectiva","a mano alzada"],c:0,exp:"Proyección ortográfica = dibujo de múltiples vistas."}},
+  {en:{q:"Cutting planes for sections are generally shown on ___.",opts:["elevations","floor plans","plot plans","door schedules"],c:1,exp:"Cutting planes for sections are typically indicated on floor plans, with arrows showing the line of sight."},
+   es:{q:"Los planos de corte para secciones generalmente se muestran en ___.",opts:["elevaciones","planos de planta","planos de sitio","programas de puertas"],c:1,exp:"Los planos de corte para secciones se indican típicamente en los planos de planta."}},
+  {en:{q:"Which project role oversees a construction project and typically contracts with a single design-build firm?",opts:["The owner","The supplier","The tradesworker","The subcontractor"],c:0,exp:"The owner is the purchaser of the project and works with either separate architects/contractors, or a single design-build firm."},
+   es:{q:"¿Qué rol del proyecto supervisa un proyecto de construcción y típicamente contrata a una sola firma de diseño-construcción?",opts:["El dueño","El proveedor","El trabajador de oficio","El subcontratista"],c:0,exp:"El dueño es el comprador del proyecto y trabaja con arquitectos/contratistas separados, o con una sola firma de diseño-construcción."}},
+  {en:{q:"A(n) ___ is a formal document used to solicit proposals from contractors, describing scope of work and budget.",opts:["RFP","title block","schedule","punch list"],c:0,exp:"An RFP (Request for Proposal) solicits contractor proposals."},
+   es:{q:"Un(a) ___ es un documento formal usado para solicitar propuestas de contratistas, describiendo el alcance y presupuesto.",opts:["RFP","cuadro de título","programa","lista de pendientes"],c:0,exp:"Una RFP solicita propuestas de contratistas."}},
+  {en:{q:"BIM software has an advantage over conventional CAD in that it can ________.",opts:["automatically flag clashes between building components before construction","eliminate the need for building permits","replace the general contractor","draw only in two dimensions"],c:0,exp:"BIM can identify clashes or inconsistencies between building components automatically, letting them be resolved before construction begins."},
+   es:{q:"El software BIM tiene una ventaja sobre el CAD convencional en que puede ________.",opts:["identificar automáticamente conflictos entre componentes antes de la construcción","eliminar la necesidad de permisos de construcción","reemplazar al contratista general","dibujar solo en dos dimensiones"],c:0,exp:"BIM puede identificar automáticamente conflictos entre componentes antes de la construcción."}},
+  {en:{q:"A perspective drawing is most commonly used for ________.",opts:["an artist's rendering of a proposed building","a piping diagram","a plot plan","a door schedule"],c:0,exp:"Perspective drawings are the most realistic pictorial drawings and are typically used as artist's renderings so an owner can visualize the completed building."},
+   es:{q:"Un dibujo en perspectiva se usa más comúnmente para ________.",opts:["una representación artística de un edificio propuesto","un diagrama de tuberías","un plano de sitio","un programa de puertas"],c:0,exp:"Los dibujos en perspectiva son los más realistas y se usan típicamente como representaciones de artista."}},
+  {en:{q:"A subcontractor is hired to ________.",opts:["install one specific type of work, such as electrical or plumbing","finance the entire project","design the building's floor plan","review the building permit application"],c:0,exp:"A subcontractor agrees with the general contractor to install a specific type of work."},
+   es:{q:"Se contrata a un subcontratista para ________.",opts:["instalar un tipo específico de trabajo, como eléctrico o plomería","financiar todo el proyecto","diseñar el plano de planta del edificio","revisar la solicitud de permiso"],c:0,exp:"Un subcontratista acuerda instalar un tipo específico de trabajo."}},
+  {en:{q:"True or False: In a multiview drawing, the right side view is always shown directly above the front view.",opts:["True","False"],c:1,exp:"False — the top view is always above the front view; the right side view is always directly to the right of the front view."},
+   es:{q:"Verdadero o falso: en un dibujo de múltiples vistas, la vista lateral derecha siempre se muestra directamente arriba de la vista frontal.",opts:["Verdadero","Falso"],c:1,exp:"Falso — la vista superior siempre está arriba de la vista frontal; la vista lateral derecha está a la derecha de la vista frontal."}},
+  {en:{q:"Isometric drawings are commonly used to depict the arrangement of ________ in a building.",opts:["piping","only landscaping","only parking lots","only office furniture"],c:0,exp:"Isometric drawings are commonly used for piping diagrams because they show realistic depth while keeping the three principal axes at equal 120° angles."},
+   es:{q:"Los dibujos isométricos se usan comúnmente para mostrar la disposición de ________ en un edificio.",opts:["tuberías","solo jardinería","solo estacionamientos","solo mobiliario de oficina"],c:0,exp:"Los dibujos isométricos se usan comúnmente para diagramas de tuberías."}}
+];
+const W1_CARDS = [
+  {en:{f:"Owner",b:"The purchaser of a construction project who reviews and approves design, budget, and plans."},es:{f:"Dueño",b:"El comprador de un proyecto de construcción que revisa y aprueba el diseño, presupuesto y planos."}},
+  {en:{f:"Architect",b:"Designs a structure for a specific client, ensuring compliance with zoning and building codes."},es:{f:"Arquitecto",b:"Diseña una estructura para un cliente específico, cumpliendo con la zonificación y códigos."}},
+  {en:{f:"General contractor",b:"Agrees to construct a building per the plans; may hire subcontractors for specific work."},es:{f:"Contratista general",b:"Se compromete a construir un edificio según los planos; puede contratar subcontratistas."}},
+  {en:{f:"Subcontractor",b:"Hired for one specific type of work, like electrical, plumbing, or HVAC."},es:{f:"Subcontratista",b:"Contratado para un tipo específico de trabajo, como eléctrico, plomería o HVAC."}},
+  {en:{f:"Supplier",b:"Provides materials, using drawings/specs to estimate quantities and cost."},es:{f:"Proveedor",b:"Suministra materiales, usando los planos para estimar cantidades y costo."}},
+  {en:{f:"Design-build",b:"A delivery system where the owner contracts with one firm for both design and construction."},es:{f:"Diseño-construcción",b:"Sistema donde el dueño contrata a una sola firma para diseño y construcción."}},
+  {en:{f:"RFP",b:"Request for Proposal — a formal document soliciting contractor proposals."},es:{f:"RFP",b:"Solicitud de Propuesta — documento formal para solicitar propuestas de contratistas."}},
+  {en:{f:"CAD",b:"Computer-aided design — computerized drafting tools used to create working drawings."},es:{f:"CAD",b:"Diseño asistido por computadora — herramientas de dibujo digitalizadas."}},
+  {en:{f:"BIM",b:"Building information modeling — an integrated system that can flag component clashes before construction."},es:{f:"BIM",b:"Modelado de información de construcción — sistema integrado que detecta conflictos antes de construir."}},
+  {en:{f:"Isometric drawing",b:"Pictorial drawing with three axes 120° apart; common for piping diagrams."},es:{f:"Dibujo isométrico",b:"Dibujo pictórico con tres ejes a 120°; común en diagramas de tuberías."}},
+  {en:{f:"Perspective drawing",b:"The most realistic pictorial drawing, shown from a given viewpoint — used for artist's renderings."},es:{f:"Dibujo en perspectiva",b:"El dibujo pictórico más realista, usado para representaciones de artista."}},
+  {en:{f:"Orthographic projection",b:"A.k.a. multiview drawing — all faces projected onto flat planes, generally at 90° to each other."},es:{f:"Proyección ortográfica",b:"Dibujo de múltiples vistas — todas las caras proyectadas en planos, generalmente a 90°."}},
+  {en:{f:"Working drawing",b:"Drawn using orthographic projection techniques — the front, top, and right side views are most common."},es:{f:"Plano de trabajo",b:"Dibujado con proyección ortográfica — las vistas frontal, superior y derecha son las más comunes."}},
+  {en:{f:"Section",b:"A scaled view made by passing a cutting plane through a building to reveal internal detail."},es:{f:"Sección",b:"Vista a escala creada al pasar un plano de corte por un edificio para mostrar detalle interno."}},
+  {en:{f:"Top view rule",b:"In orthographic projection, the top view is always directly above the front view; the right side view is always to the right of it."},es:{f:"Regla de la vista superior",b:"En proyección ortográfica, la vista superior siempre está arriba de la frontal; la lateral derecha está a la derecha."}}
+];
+
+/* ============ WEEK 2 CONTENT: Sketching Views & Scales ============ */
+const W2_SECTION1 = [
+  {en:{q:"Which line type is the most common line used on prints, showing edges or shapes that create visible lines?",opts:["Object line","Hidden line","Centerline","Extension line"],c:0,exp:"Object lines are the most common line type on prints — thick, solid lines showing edges or shapes that create visible lines, like the profile of a building."},
+   es:{q:"¿Qué tipo de línea es la más común en los planos, mostrando bordes o formas que crean líneas visibles?",opts:["Línea de objeto","Línea oculta","Línea central","Línea de extensión"],c:0,exp:"Las líneas de objeto son el tipo de línea más común en los planos."}},
+  {type:'fillBlank', en:{q:"Features that are not visible, such as those below a surface or behind an object, are shown with ___ lines.",opts:["hidden","object","center","dimension"],c:0,exp:"Hidden lines — thin lines made of short, evenly spaced dashes — represent features that aren't visible, like wall cabinets shown on a plan view."},
+   es:{q:"Las características que no son visibles, como las que están debajo de una superficie o detrás de un objeto, se muestran con líneas ___.",opts:["ocultas","de objeto","centrales","de dimensión"],c:0,exp:"Las líneas ocultas representan características no visibles, como gabinetes de pared mostrados en una vista de planta."}},
+  {en:{q:"Centerlines are used to indicate ________.",opts:["the centers of symmetrical objects such as arcs, circles, and columns","the outer profile of a building","hidden features below a surface","the direction a section was taken"],c:0,exp:"Centerlines, made of alternating long and short dashes, indicate the centers of symmetrical objects — columns, fixtures, windows, doors, and other openings."},
+   es:{q:"Las líneas centrales se usan para indicar ________.",opts:["los centros de objetos simétricos como arcos, círculos y columnas","el perfil exterior de un edificio","características ocultas debajo de una superficie","la dirección en que se tomó una sección"],c:0,exp:"Las líneas centrales indican los centros de objetos simétricos: columnas, accesorios, ventanas, puertas y otras aberturas."}},
+  {en:{q:"Which organization publishes the standard alphabet of lines used in ANSI/ASME Y14.2?",opts:["ANSI (American National Standards Institute)","OSHA","LEED","NCCER"],c:0,exp:"ANSI, a private nonprofit that coordinates U.S. national and international standards, publishes Y14.2 — Line Conventions and Lettering."},
+   es:{q:"¿Qué organización publica el alfabeto de líneas estándar usado en ANSI/ASME Y14.2?",opts:["ANSI (Instituto Nacional Americano de Estándares)","OSHA","LEED","NCCER"],c:0,exp:"ANSI publica el Y14.2 — Convenciones de Línea y Rotulado."}},
+  {type:'match', en:{prompt:"Match each line type to what it's used for.", pairs:[
+      {term:"Dimension line", def:"Shows the size or location of a feature, terminated by arrowheads or dots"},
+      {term:"Extension line", def:"Projects from a feature being dimensioned, to define size or location"},
+      {term:"Leader", def:"Terminated by an arrowhead or dot, used to call out specific features"},
+      {term:"Cutting plane", def:"A thick line showing where a section has been taken"}
+    ], exp:"Dimension and extension lines work together to show sizes and locations on a print; leaders call out specific notes; and cutting planes show where a section view was taken from."},
+   es:{prompt:"Relaciona cada tipo de línea con para qué se usa.", pairs:[
+      {term:"Línea de dimensión", def:"Muestra el tamaño o ubicación de una característica, terminada por flechas o puntos"},
+      {term:"Línea de extensión", def:"Se proyecta desde una característica que se acota, para definir tamaño o ubicación"},
+      {term:"Línea de referencia (leader)", def:"Terminada por una flecha o punto, se usa para señalar características específicas"},
+      {term:"Plano de corte", def:"Una línea gruesa que muestra dónde se tomó una sección"}
+    ], exp:"Las líneas de dimensión y extensión muestran tamaños y ubicaciones; los leaders señalan notas específicas; y los planos de corte muestran de dónde se tomó una vista de sección."}},
+  {en:{q:"Break lines are used to ________.",opts:["show that a feature continues but isn't fully drawn","indicate the centerpoint of a circle","show the size of a door opening","represent a hidden electrical outlet"],c:0,exp:"Break lines are used where an architect wishes to terminate a feature or show that a feature continues but is not drawn in full."},
+   es:{q:"Las líneas de ruptura se usan para ________.",opts:["mostrar que una característica continúa pero no está dibujada por completo","indicar el centro de un círculo","mostrar el tamaño de una abertura de puerta","representar una toma eléctrica oculta"],c:0,exp:"Las líneas de ruptura se usan donde un arquitecto desea terminar una característica o mostrar que continúa sin dibujarla por completo."}},
+  {en:{q:"Section lines (also called hatching) are used to ________.",opts:["identify internal features and materials in a cut section","show the property line on a plot plan","indicate a door's swing direction","label the title block"],c:0,exp:"Section lines identify internal features and are often drawn as a pattern (hatching) representing the material that was cut through, like concrete or wood."},
+   es:{q:"Las líneas de sección (también llamadas achurado) se usan para ________.",opts:["identificar características y materiales internos en un corte","mostrar la línea de propiedad en un plano de sitio","indicar la dirección de apertura de una puerta","rotular el cuadro de título"],c:0,exp:"Las líneas de sección identifican características internas y a menudo se dibujan como un patrón que representa el material cortado."}},
+  {en:{q:"True or False: While ANSI publishes line-type guidelines, slight variations in dimensioning styles may still exist between different architects.",opts:["True","False"],c:0,exp:"True — the book itself notes that while ANSI publishes standard guidelines, slight variations in line types and dimensioning styles may exist on real working drawings."},
+   es:{q:"Verdadero o falso: aunque ANSI publica pautas de tipos de línea, aún pueden existir ligeras variaciones en los estilos de acotado entre distintos arquitectos.",opts:["Verdadero","Falso"],c:0,exp:"Verdadero — aunque ANSI publica pautas estándar, pueden existir ligeras variaciones en los estilos de acotado y tipos de línea en planos reales."}},
+  {en:{q:"An offset section is used when ________.",opts:["an architect needs to bend the cutting plane to intersect features not in a straight line","a drawing has no dimensions at all","two buildings share the same plot plan","a door schedule needs updating"],c:0,exp:"An offset section may be shown when a set of prints has features, such as windows or doors, that aren't in a straight line — the cutting plane is bent, or 'offset,' to intersect the desired features."},
+   es:{q:"Se usa una sección desplazada (offset) cuando ________.",opts:["un arquitecto necesita doblar el plano de corte para intersectar características que no están en línea recta","un dibujo no tiene dimensiones","dos edificios comparten el mismo plano de sitio","hay que actualizar un programa de puertas"],c:0,exp:"Una sección desplazada dobla el plano de corte para intersectar características, como ventanas o puertas, que no están en línea recta."}}
+];
+const W2_SECTION2 = [
+  {en:{q:"The most common scale used for residential and light commercial working drawings is ________.",opts:["1/4\" = 1'-0\"","1\" = 50'-0\"","3\" = 1'-0\"","1/16\" = 1'-0\""],c:0,exp:"1/4\" = 1'-0\" is the most common scale — it gives enough space on a reasonably sized sheet to clearly show a building's parts, dimensions, and notes."},
+   es:{q:"La escala más común usada en planos de trabajo residenciales y comerciales ligeros es ________.",opts:["1/4\" = 1'-0\"","1\" = 50'-0\"","3\" = 1'-0\"","1/16\" = 1'-0\""],c:0,exp:"1/4\" = 1'-0\" es la escala más común."}},
+  {en:{q:"An architect's scale is triangular in cross section and has how many faces?",opts:["Six","Three","Four","Eight"],c:0,exp:"An architect's scale has six faces, five of which have two scales each divided into inches and fractional parts of an inch."},
+   es:{q:"Una escala de arquitecto es de sección triangular y tiene cuántas caras?",opts:["Seis","Tres","Cuatro","Ocho"],c:0,exp:"Una escala de arquitecto tiene seis caras, cinco de las cuales tienen dos escalas cada una."}},
+  {en:{q:"To use an architect's scale, you should place the 0 of the appropriate scale ________.",opts:["at one end of the line and read the increment at the other end","in the exact center of the drawing","at the top of the sheet only","only at the right-hand edge"],c:0,exp:"Place the 0 at one end of the line being measured, and read the largest increment falling at the other end. Scales can be read right or left, but never both on the same reading."},
+   es:{q:"Para usar una escala de arquitecto, debes colocar el 0 de la escala apropiada ________.",opts:["en un extremo de la línea y leer el incremento en el otro extremo","en el centro exacto del dibujo","solo en la parte superior de la hoja","solo en el borde derecho"],c:0,exp:"Coloca el 0 en un extremo de la línea que se mide, y lee el mayor incremento en el otro extremo."}},
+  {en:{q:"An engineer's scale is typically used to draw and measure ________.",opts:["large areas, such as building lots on plot plans","small trim details at full size","door hardware only","stairway handrail cross-sections"],c:0,exp:"An engineer's scale is a triangular, six-sided scale used for large areas like plot plans, with scales such as 1\"=10', 1\"=20', up to 1\"=60' (the inch divisions of a foot are omitted)."},
+   es:{q:"Una escala de ingeniero se usa típicamente para dibujar y medir ________.",opts:["áreas grandes, como lotes de terreno en planos de sitio","detalles pequeños de moldura a tamaño real","solo herrajes de puertas","secciones transversales de pasamanos"],c:0,exp:"Una escala de ingeniero se usa para áreas grandes como planos de sitio, con escalas como 1\"=10', 1\"=20', hasta 1\"=60'."}},
+  {en:{q:"A drawing shown at 1/4\" = 1'-0\" scale has a line measuring 3 actual inches long on the paper. How many actual feet does that line represent?",opts:["9 feet","12 feet","3 feet","16 feet"],c:1,exp:"At 1/4\"=1'-0\", each 1/4 inch on paper equals 1 real foot, so 3 inches (twelve 1/4-inch segments) equals 12 feet."},
+   es:{q:"Un dibujo a escala 1/4\" = 1'-0\" tiene una línea que mide 3 pulgadas reales de largo en el papel. ¿Cuántos pies reales representa esa línea?",opts:["9 pies","12 pies","3 pies","16 pies"],c:1,exp:"A 1/4\"=1'-0\", cada 1/4 de pulgada en papel equivale a 1 pie real, así que 3 pulgadas equivalen a 12 pies."}},
+  {en:{q:"A partition is framed with 2×4 studs and finished with 1/2\" gypsum board on both sides. What is the actual thickness of the partition?",opts:["3 1/2 inches","4 1/2 inches","5 inches","3 inches"],c:1,exp:"A 2×4 stud is actually 3 1/2\" thick. Adding 1/2\" gypsum board on each side (1/2\" + 1/2\") gives 3 1/2\" + 1\" = 4 1/2\"."},
+   es:{q:"Una partición está enmarcada con montantes de 2×4 y terminada con placa de yeso de 1/2\" en ambos lados. ¿Cuál es el grosor real de la partición?",opts:["3 1/2 pulgadas","4 1/2 pulgadas","5 pulgadas","3 pulgadas"],c:1,exp:"Un montante de 2×4 mide realmente 3 1/2\". Sumando placa de yeso de 1/2\" en cada lado, da 3 1/2\" + 1\" = 4 1/2\"."}},
+  {en:{q:"On a plot plan, the point of beginning (POB) is +0'-0\" and set at a benchmark elevation of 220' above sea level. If the finished first floor is 4'-0\" above the POB, what is the first floor's elevation above sea level?",opts:["216 feet","220 feet","224 feet","228 feet"],c:2,exp:"220' (benchmark) + 4'-0\" (first floor above POB) = 224' above sea level."},
+   es:{q:"En un plano de sitio, el punto de partida (POB) es +0'-0\" y se fija a una elevación de referencia de 220' sobre el nivel del mar. Si el primer piso terminado está 4'-0\" sobre el POB, ¿cuál es su elevación sobre el nivel del mar?",opts:["216 pies","220 pies","224 pies","228 pies"],c:2,exp:"220' + 4'-0\" = 224' sobre el nivel del mar."}},
+  {en:{q:"Scales that are multiples of one another, like 1/8\" = 1'-0\" and 1/4\" = 1'-0\", are commonly ________.",opts:["located on the same edge of the architect's scale, to conserve space","never used on the same project","only found on engineer's scales","printed only on digital drawings"],c:0,exp:"Scales that are multiples of each other are placed on the same edge of the architect's scale to conserve space — one is read left to right, the other right to left."},
+   es:{q:"Las escalas que son múltiplos entre sí, como 1/8\" = 1'-0\" y 1/4\" = 1'-0\", comúnmente se ________.",opts:["ubican en el mismo borde de la escala de arquitecto, para ahorrar espacio","nunca se usan en el mismo proyecto","solo se encuentran en escalas de ingeniero","se imprimen solo en dibujos digitales"],c:0,exp:"Las escalas múltiplas entre sí se colocan en el mismo borde de la escala de arquitecto para ahorrar espacio."}},
+  {en:{q:"A detail drawn at 3\" = 1'-0\" scale is an example of ________.",opts:["a large scale used to show small features clearly, like trim profiles","the smallest scale possible on a working drawing","a scale only used for plot plans","a scale that cannot be read with an architect's scale"],c:0,exp:"Complex features like molding or trim profiles are often shown at a large scale, such as 3\"=1'-0\" (quarter size) or even 12\"=1'-0\" (full size), so small details can be clearly described."},
+   es:{q:"Un detalle dibujado a escala 3\" = 1'-0\" es un ejemplo de ________.",opts:["una escala grande usada para mostrar claramente características pequeñas, como perfiles de moldura","la escala más pequeña posible en un plano de trabajo","una escala usada solo para planos de sitio","una escala que no se puede leer con una escala de arquitecto"],c:0,exp:"Características complejas como perfiles de moldura a menudo se muestran a gran escala, como 3\"=1'-0\"."}}
+];
+const W2_SECTION3 = [
+  {en:{q:"If a rectangular block has a triangular notch cut from its top-front edge, which orthographic view would most clearly show that notch as an angled line?",opts:["The front view or the top view","Only the bottom view","Only the right side view, never the front or top","None of the views would show it"],c:0,exp:"A bevel or notch cut across the top-front edge of a block shows up as an angled (diagonal) line in both the front view and the top view, since the cut affects both of those faces."},
+   es:{q:"Si un bloque rectangular tiene una muesca triangular cortada en su borde superior frontal, ¿qué vista ortográfica mostraría esa muesca más claramente como una línea angulada?",opts:["La vista frontal o la vista superior","Solo la vista inferior","Solo la vista lateral derecha, nunca la frontal o superior","Ninguna vista la mostraría"],c:0,exp:"Un bisel o muesca en el borde superior frontal de un bloque aparece como una línea angulada tanto en la vista frontal como en la superior."}},
+  {en:{q:"A cylindrical hole drilled straight down through the top of a rectangular block would appear as which shape in the top view?",opts:["A circle","A square","A triangle","An angled line"],c:0,exp:"Looking straight down (the top view) at a vertical cylindrical hole shows its true circular shape — a circle."},
+   es:{q:"Un orificio cilíndrico perforado directamente hacia abajo a través de la parte superior de un bloque rectangular aparecería como qué forma en la vista superior?",opts:["Un círculo","Un cuadrado","Un triángulo","Una línea angulada"],c:0,exp:"Al mirar directamente hacia abajo (la vista superior) un orificio cilíndrico vertical, se ve su verdadera forma circular."}},
+  {en:{q:"If the same cylindrical hole from the previous question does not go all the way through the block, how would it appear in the front view?",opts:["As a rectangle bounded by hidden lines, since the bottom of the hole isn't visible from the front","As a solid circle","It would not appear at all in the front view","As a centerline only, with no other lines"],c:0,exp:"A hole that doesn't pass all the way through shows its depth as hidden lines (dashes) in the front view, since the sides and bottom of the hole aren't directly visible from that angle — though a centerline is also added to mark its axis."},
+   es:{q:"Si el mismo orificio cilíndrico de la pregunta anterior no atraviesa todo el bloque, ¿cómo aparecería en la vista frontal?",opts:["Como un rectángulo delimitado por líneas ocultas, ya que el fondo del orificio no es visible desde el frente","Como un círculo sólido","No aparecería en absoluto en la vista frontal","Solo como una línea central, sin otras líneas"],c:0,exp:"Un orificio que no atraviesa todo el bloque muestra su profundidad con líneas ocultas en la vista frontal."}},
+  {en:{q:"When sketching an isometric drawing of a rectangular block, the three axes drawn from a single corner should be spaced ________.",opts:["120° apart from each other","90° apart from each other","at random angles","only vertically and horizontally, with no angled lines"],c:0,exp:"Isometric sketches start from a corner with three axes 120° apart — this is what gives the sketch its recognizable 'three faces at once' look."},
+   es:{q:"Al bocetar un dibujo isométrico de un bloque rectangular, los tres ejes dibujados desde una sola esquina deben estar espaciados ________.",opts:["120° entre sí","90° entre sí","en ángulos aleatorios","solo vertical y horizontalmente, sin líneas anguladas"],c:0,exp:"Los bocetos isométricos parten de una esquina con tres ejes separados 120°."}},
+  {en:{q:"A two-point perspective sketch of a building typically uses ________ to make lines converge toward the horizon.",opts:["vanishing points","hidden lines only","a single centerline","the title block"],c:0,exp:"Perspective sketches use vanishing points on the horizon line, toward which parallel lines of the object appear to converge — this is what creates the realistic depth perspective drawings are known for."},
+   es:{q:"Un boceto en perspectiva de dos puntos de un edificio típicamente usa ________ para hacer que las líneas converjan hacia el horizonte.",opts:["puntos de fuga","solo líneas ocultas","una sola línea central","el cuadro de título"],c:0,exp:"Los bocetos en perspectiva usan puntos de fuga en la línea del horizonte, hacia los cuales convergen las líneas paralelas del objeto."}},
+  {en:{q:"True or False: Steeper stairway angles (more vertical) make for easier climbing than shallower angles.",opts:["True","False"],c:1,exp:"False — the preferred stairway angle is 30° to 35°; steeper angles do not facilitate easy climbing, which is why building codes constrain riser height and tread depth to keep the angle in that preferred range."},
+   es:{q:"Verdadero o falso: los ángulos de escalera más pronunciados (más verticales) facilitan más el subir que los ángulos menos pronunciados.",opts:["Verdadero","Falso"],c:1,exp:"Falso — el ángulo preferido de escalera es de 30° a 35°; los ángulos más pronunciados no facilitan subir con facilidad."}},
+  {en:{q:"When sketching the front, top, and right side views of an L-shaped block, the top and right side views should be positioned ________.",opts:["directly above and directly to the right of the front view, just like a formal orthographic drawing","in any order, since sketches don't need to follow a layout","stacked vertically in a single column","overlapping the front view"],c:0,exp:"Even in a freehand sketch, the same orthographic layout rules apply: the top view goes directly above the front view, and the right side view goes directly to the right of it."},
+   es:{q:"Al bocetar las vistas frontal, superior y lateral derecha de un bloque en forma de L, las vistas superior y lateral derecha deben colocarse ________.",opts:["directamente arriba y directamente a la derecha de la vista frontal, igual que en un dibujo ortográfico formal","en cualquier orden, ya que los bocetos no necesitan seguir un diseño","apiladas verticalmente en una sola columna","superpuestas a la vista frontal"],c:0,exp:"Incluso en un boceto a mano alzada aplican las mismas reglas de diseño ortográfico."}},
+  {en:{q:"A stepped block (like two boxes of different heights stacked with an offset) would show a visible horizontal edge where the heights change, in which view(s)?",opts:["The front view and/or the side view, wherever the step is visible as an outline","Only the top view","No view would show it","Only as a centerline"],c:0,exp:"A step or offset in height shows up as a visible object line (an edge) in whichever view directly faces that change in height — commonly the front and/or side views."},
+   es:{q:"Un bloque escalonado (como dos cajas de diferente altura apiladas con desplazamiento) mostraría un borde horizontal visible donde cambia la altura, ¿en qué vista(s)?",opts:["La vista frontal y/o lateral, donde el escalón sea visible como contorno","Solo la vista superior","Ninguna vista lo mostraría","Solo como línea central"],c:0,exp:"Un escalón o desplazamiento de altura aparece como una línea de objeto visible en la vista que enfrenta directamente ese cambio."}}
+];
+const W2_TEST = [
+  {en:{q:"Which line type shows hidden features using short, evenly spaced dashes?",opts:["Object line","Hidden line","Centerline","Leader"],c:1,exp:"Hidden lines use short, evenly spaced dashes to show features that aren't visible."},
+   es:{q:"¿Qué tipo de línea muestra características ocultas usando guiones cortos y espaciados uniformemente?",opts:["Línea de objeto","Línea oculta","Línea central","Línea de referencia"],c:1,exp:"Las líneas ocultas usan guiones cortos y espaciados uniformemente."}},
+  {en:{q:"The most common scale for residential working drawings is ___.",opts:["1/4\" = 1'-0\"","1\" = 50'-0\"","1/2\" = 1'-0\"","6\" = 1'-0\""],c:0,exp:"1/4\" = 1'-0\" is the most common working-drawing scale."},
+   es:{q:"La escala más común para planos de trabajo residenciales es ___.",opts:["1/4\" = 1'-0\"","1\" = 50'-0\"","1/2\" = 1'-0\"","6\" = 1'-0\""],c:0,exp:"1/4\" = 1'-0\" es la escala más común."}},
+  {en:{q:"An architect's scale has how many faces, most divided into two scales each?",opts:["Six","Four","Three","Eight"],c:0,exp:"An architect's scale is triangular with six faces."},
+   es:{q:"¿Cuántas caras tiene una escala de arquitecto, la mayoría divididas en dos escalas cada una?",opts:["Seis","Cuatro","Tres","Ocho"],c:0,exp:"Una escala de arquitecto es triangular con seis caras."}},
+  {en:{q:"An engineer's scale is typically used for ___.",opts:["plot plans and large areas","interior trim details","door hardware schedules","handrail cross-sections"],c:0,exp:"Engineer's scales are used for large areas like plot plans."},
+   es:{q:"Una escala de ingeniero se usa típicamente para ___.",opts:["planos de sitio y áreas grandes","detalles de moldura interior","programas de herrajes de puertas","secciones de pasamanos"],c:0,exp:"Las escalas de ingeniero se usan para áreas grandes como planos de sitio."}},
+  {en:{q:"A partition uses 2×4 studs with 5/8\" gypsum board on each side. What is the actual overall thickness?",opts:["3 1/2 inches","4 3/4 inches","4 1/2 inches","5 inches"],c:1,exp:"A 2×4 is 3 1/2\" actual. Adding 5/8\" + 5/8\" = 1 1/4\" gives 3 1/2\" + 1 1/4\" = 4 3/4\"."},
+   es:{q:"Una partición usa montantes de 2×4 con placa de yeso de 5/8\" en cada lado. ¿Cuál es el grosor total real?",opts:["3 1/2 pulgadas","4 3/4 pulgadas","4 1/2 pulgadas","5 pulgadas"],c:1,exp:"Un 2×4 mide 3 1/2\" real. Sumando 5/8\" + 5/8\" = 1 1/4\", da 4 3/4\"."}},
+  {en:{q:"At a scale of 1/4\" = 1'-0\", a wall measuring 2 inches on the drawing represents how many actual feet?",opts:["4 feet","8 feet","2 feet","16 feet"],c:1,exp:"At 1/4\"=1'-0\", each 1/4 inch equals 1 foot; 2 inches contains eight 1/4-inch segments, so it represents 8 feet."},
+   es:{q:"A una escala de 1/4\" = 1'-0\", un muro que mide 2 pulgadas en el dibujo representa cuántos pies reales?",opts:["4 pies","8 pies","2 pies","16 pies"],c:1,exp:"A 1/4\"=1'-0\", cada 1/4 de pulgada equivale a 1 pie; 2 pulgadas contienen ocho segmentos de 1/4 de pulgada, o sea 8 pies."}},
+  {en:{q:"Section lines (hatching) on a drawing are used to ___.",opts:["identify internal features and the material cut through","show a door's swing direction","label the scale used","indicate a property line"],c:0,exp:"Section lines identify internal features and the material cut through in a section view."},
+   es:{q:"Las líneas de sección (achurado) en un dibujo se usan para ___.",opts:["identificar características internas y el material cortado","mostrar la dirección de apertura de una puerta","rotular la escala usada","indicar una línea de propiedad"],c:0,exp:"Las líneas de sección identifican características internas y el material cortado."}},
+  {en:{q:"The preferred stairway angle for easy climbing is between ___.",opts:["30° and 35°","45° and 60°","10° and 20°","60° and 75°"],c:0,exp:"The preferred stairway angle is 30° to 35° — steeper angles don't facilitate easy climbing."},
+   es:{q:"El ángulo preferido de escalera para subir con facilidad está entre ___.",opts:["30° y 35°","45° y 60°","10° y 20°","60° y 75°"],c:0,exp:"El ángulo preferido de escalera es de 30° a 35°."}},
+  {en:{q:"In orthographic sketching, the top view is always positioned ___ the front view.",opts:["directly above","directly to the right of","directly below","diagonally from"],c:0,exp:"The top view is always drawn directly above the front view, whether in a formal drawing or a sketch."},
+   es:{q:"En el boceto ortográfico, la vista superior siempre se ubica ___ de la vista frontal.",opts:["directamente arriba","directamente a la derecha","directamente abajo","en diagonal"],c:0,exp:"La vista superior siempre se dibuja directamente arriba de la vista frontal."}},
+  {en:{q:"A vertical cylindrical hole drilled through the top of a block, viewed from the top, appears as a ___.",opts:["circle","rectangle","triangle","hidden line only"],c:0,exp:"Looking straight down at a cylindrical hole shows its true circular shape."},
+   es:{q:"Un orificio cilíndrico vertical perforado a través de la parte superior de un bloque, visto desde arriba, aparece como un ___.",opts:["círculo","rectángulo","triángulo","solo línea oculta"],c:0,exp:"Al mirar directamente hacia abajo un orificio cilíndrico se ve su verdadera forma circular."}},
+  {en:{q:"Scales that are multiples of each other, such as 1/8\" and 1/4\", are placed on the same edge of an architect's scale because ___.",opts:["it conserves space, with one direction read left-to-right and the other right-to-left","only one of them is ever used","engineer's scales don't allow this","they must always be read in the same direction"],c:0,exp:"Placing multiple-scale pairs on the same edge conserves space; one scale reads left to right and the other reads right to left."},
+   es:{q:"Las escalas que son múltiplos entre sí, como 1/8\" y 1/4\", se colocan en el mismo borde de una escala de arquitecto porque ___.",opts:["ahorra espacio, leyendo una dirección de izquierda a derecha y la otra de derecha a izquierda","solo una de ellas se usa alguna vez","las escalas de ingeniero no permiten esto","siempre deben leerse en la misma dirección"],c:0,exp:"Colocar pares de escalas múltiplas en el mismo borde ahorra espacio."}},
+  {en:{q:"True or False: An offset section bends the cutting plane to intersect features that are not in a straight line.",opts:["True","False"],c:0,exp:"True — an offset section lets the cutting plane bend, or 'offset,' to intersect desired features like windows or doors that aren't aligned."},
+   es:{q:"Verdadero o falso: una sección desplazada (offset) dobla el plano de corte para intersectar características que no están en línea recta.",opts:["Verdadero","Falso"],c:0,exp:"Verdadero — una sección desplazada dobla el plano de corte para intersectar las características deseadas."}}
+];
+const W2_CARDS = [
+  {en:{f:"Object line",b:"Thick, solid line — the most common line type, shows visible edges/shapes."},es:{f:"Línea de objeto",b:"Línea gruesa y continua — la más común, muestra bordes/formas visibles."}},
+  {en:{f:"Hidden line",b:"Thin line of short, evenly spaced dashes — shows features not visible from that view."},es:{f:"Línea oculta",b:"Línea delgada de guiones cortos y uniformes — muestra características no visibles."}},
+  {en:{f:"Centerline",b:"Alternating long/short dashes — marks the center of symmetrical objects."},es:{f:"Línea central",b:"Guiones largos y cortos alternados — marca el centro de objetos simétricos."}},
+  {en:{f:"Dimension & extension lines",b:"Work together to show the size or location of a feature, terminated by arrowheads, slashes, or dots."},es:{f:"Líneas de dimensión y extensión",b:"Trabajan juntas para mostrar tamaño o ubicación, terminadas por flechas, diagonales o puntos."}},
+  {en:{f:"Cutting plane line",b:"A thick line showing where a section was taken through a building."},es:{f:"Línea de plano de corte",b:"Una línea gruesa que muestra dónde se tomó una sección."}},
+  {en:{f:"Architect's scale",b:"Triangular, six-sided tool with two scales per face, used for building drawings."},es:{f:"Escala de arquitecto",b:"Herramienta triangular de seis caras con dos escalas por cara, usada en planos de edificios."}},
+  {en:{f:"Engineer's scale",b:"Triangular scale used for large areas like plot plans (1\"=10', 20', 30'...60')."},es:{f:"Escala de ingeniero",b:"Escala triangular usada para áreas grandes como planos de sitio."}},
+  {en:{f:"1/4\" = 1'-0\"",b:"The most common scale for residential/light commercial working drawings."},es:{f:"1/4\" = 1'-0\"",b:"La escala más común para planos residenciales/comerciales ligeros."}},
+  {en:{f:"2×4 actual size",b:"1 1/2\" × 3 1/2\" — nominal lumber sizes are never the actual dimensions."},es:{f:"Tamaño real de 2×4",b:"1 1/2\" × 3 1/2\" — los tamaños nominales de madera nunca son las dimensiones reales."}},
+  {en:{f:"Offset section",b:"A section where the cutting plane is bent to intersect features not in a straight line."},es:{f:"Sección desplazada",b:"Una sección donde el plano de corte se dobla para intersectar características fuera de línea recta."}},
+  {en:{f:"Vanishing point",b:"The point on the horizon toward which parallel lines converge in a perspective drawing."},es:{f:"Punto de fuga",b:"El punto en el horizonte hacia el cual convergen las líneas paralelas en un dibujo en perspectiva."}},
+  {en:{f:"Preferred stairway angle",b:"30° to 35° — steeper angles don't facilitate easy climbing."},es:{f:"Ángulo preferido de escalera",b:"30° a 35° — ángulos más pronunciados no facilitan subir con facilidad."}},
+  {en:{f:"Orthographic sketch layout",b:"Top view directly above the front view; right side view directly to its right — same rule as formal drawings."},es:{f:"Diseño de boceto ortográfico",b:"Vista superior arriba de la frontal; vista lateral derecha a su derecha — misma regla que los planos formales."}},
+  {en:{f:"Isometric axes",b:"Three axes drawn 120° apart from a single corner."},es:{f:"Ejes isométricos",b:"Tres ejes dibujados a 120° entre sí desde una sola esquina."}}
+];
+
+/* ============ WEEK 3 CONTENT: Dimensions, Plans & Trade Math ============ */
+const W3_SECTION1 = [
+  {en:{q:"Dimensions on plan views and elevations are shown in ________.",opts:["feet and inches, with a dash between them","only inches","only feet","meters and centimeters"],c:0,exp:"Dimensions are shown in feet and inches, such as 3'-0\", 4'-8\", or 28'-3\", with a dash separating the feet and inch portions."},
+   es:{q:"Las dimensiones en las vistas de planta y elevaciones se muestran en ________.",opts:["pies y pulgadas, con un guion entre ellos","solo pulgadas","solo pies","metros y centímetros"],c:0,exp:"Las dimensiones se muestran en pies y pulgadas, con un guion separando las partes."}},
+  {en:{q:"A plot plan is a scaled working drawing that shows ________.",opts:["the shape and size of a building lot, plus the building's location on it","only the interior room layout","only the roof framing","only the electrical panel schedule"],c:0,exp:"A plot plan shows the shape and size of a building lot, the location/shape/size of a building on the lot, and the finished floor elevation."},
+   es:{q:"Un plano de sitio (plot plan) es un plano a escala que muestra ________.",opts:["la forma y tamaño de un lote, más la ubicación del edificio en él","solo la distribución interior de las habitaciones","solo el entramado del techo","solo el programa del panel eléctrico"],c:0,exp:"Un plano de sitio muestra la forma y tamaño de un lote, y la ubicación/forma/tamaño de un edificio en él."}},
+  {en:{q:"The point of beginning (POB) on a plot plan is ________.",opts:["a fixed reference location used for horizontal and vertical dimensions","the highest point of the roof","always the same as the property's mailing address","only used for commercial buildings"],c:0,exp:"The POB is a fixed location on a building site used as a reference point for horizontal and vertical dimensions, related to a benchmark or city datum point."},
+   es:{q:"El punto de partida (POB) en un plano de sitio es ________.",opts:["una ubicación fija de referencia para dimensiones horizontales y verticales","el punto más alto del techo","siempre la misma que la dirección postal de la propiedad","usado solo en edificios comerciales"],c:0,exp:"El POB es una ubicación fija en el sitio usada como referencia para dimensiones horizontales y verticales."}},
+  {type:'fillBlank', en:{q:"A ___ contour line on a plot plan represents the finished grade (FG) of a lot, while a dashed one represents natural/existing grade.",opts:["solid","dotted","centerline","hidden"],c:0,exp:"Solid contour lines, commonly marked FG, represent finished grade; dashed contour lines represent the natural or existing grade before construction."},
+   es:{q:"Una línea de contorno ___ en un plano de sitio representa el nivel de terminación (FG) de un lote, mientras que una discontinua representa el nivel natural/existente.",opts:["continua","punteada","central","oculta"],c:0,exp:"Las líneas de contorno continuas, marcadas comúnmente FG, representan el nivel terminado; las discontinuas representan el nivel natural o existente."}},
+  {en:{q:"Setbacks shown on a plot plan are established by ________.",opts:["zoning ordinances","the general contractor's preference","the supplier's delivery schedule","the framing crew"],c:0,exp:"Zoning ordinances restrict the use of land and establish setbacks — the minimum distance from a street, sidewalk, or property line to a building."},
+   es:{q:"Los retiros (setbacks) mostrados en un plano de sitio son establecidos por ________.",opts:["las ordenanzas de zonificación","la preferencia del contratista general","el horario de entrega del proveedor","la cuadrilla de enmarcado"],c:0,exp:"Las ordenanzas de zonificación restringen el uso del suelo y establecen los retiros."}},
+  {en:{q:"A one-family dwelling's point of beginning is shown on the plot plan as 312'-0\". The house has a full basement, and the first floor elevation is 316'-6\". The basement floor is 9'-0\" below the first floor. What is the elevation of the basement floor?",opts:["305'-6\"","307'-6\"","309'-6\"","303'-6\""],c:1, exp:"First floor elevation is 316'-6\". Subtracting 9'-0\" for the basement gives 316'-6\" − 9'-0\" = 307'-6\"."},
+   es:{q:"El punto de partida de una vivienda unifamiliar se muestra en el plano de sitio como 312'-0\". La casa tiene sótano completo, y la elevación del primer piso es 316'-6\". El piso del sótano está 9'-0\" debajo del primer piso. ¿Cuál es la elevación del piso del sótano?",opts:["305'-6\"","307'-6\"","309'-6\"","303'-6\""],c:1,exp:"La elevación del primer piso es 316'-6\". Restando 9'-0\" para el sótano da 307'-6\"."}},
+  {en:{q:"A local ordinance requires a 40'-0\" front setback and 25'-0\" side setbacks for a commercial building. If a proposed building sits exactly 40'-0\" from the front curb and 20'-0\" from one side property line, is the side setback sufficient?",opts:["No, 20'-0\" is less than the required 25'-0\" side setback","Yes, because the front setback is satisfied","Yes, because 20 feet always exceeds any local ordinance","There isn't enough information to know"],c:0,exp:"20'-0\" is less than the 25'-0\" minimum side setback required by this ordinance, so it does not meet the requirement — even though the front setback happens to be satisfied."},
+   es:{q:"Una ordenanza local requiere un retiro frontal de 40'-0\" y retiros laterales de 25'-0\" para un edificio comercial. Si un edificio propuesto se ubica exactamente a 40'-0\" de la acera frontal y a 20'-0\" de una línea de propiedad lateral, ¿es suficiente el retiro lateral?",opts:["No, 20'-0\" es menor que el retiro lateral requerido de 25'-0\"","Sí, porque el retiro frontal se cumple","Sí, porque 20 pies siempre supera cualquier ordenanza local","No hay suficiente información para saberlo"],c:0,exp:"20'-0\" es menor que el mínimo de 25'-0\" requerido, así que no cumple el requisito."}},
+  {en:{q:"A rectangular building is 38'-0\" × 50'-0\". What is its floor area in square feet?",opts:["1,900 sq ft","1,800 sq ft","1,700 sq ft","2,000 sq ft"],c:0,exp:"38 × 50 = 1,900 square feet."},
+   es:{q:"Un edificio rectangular mide 38'-0\" × 50'-0\". ¿Cuál es su área de piso en pies cuadrados?",opts:["1,900 pies²","1,800 pies²","1,700 pies²","2,000 pies²"],c:0,exp:"38 × 50 = 1,900 pies cuadrados."}},
+  {en:{q:"A survey performed before construction begins provides information about ________.",opts:["lot corners, north compass direction, existing trees, and utility locations","only the paint colors to be used","only the HVAC duct layout","only the roof pitch"],c:0,exp:"A legal survey establishes the lot corners relative to official points of measurement, and shows the north compass direction, angles, existing trees/contours, and utility locations."},
+   es:{q:"Un levantamiento realizado antes de comenzar la construcción proporciona información sobre ________.",opts:["las esquinas del lote, dirección norte, árboles existentes y ubicación de servicios","solo los colores de pintura a usar","solo el trazado de ductos de HVAC","solo la pendiente del techo"],c:0,exp:"Un levantamiento legal establece las esquinas del lote, la dirección norte, árboles/contornos existentes y ubicación de servicios."}}
+];
+const W3_SECTION2 = [
+  {en:{q:"A floor plan represents a horizontal section taken at approximately what height above the floor?",opts:["5'-0\"","1'-0\"","8'-0\"","10'-0\""],c:0,exp:"Floor plans are views of a building as though cutting planes were made horizontally about 5'-0\" above floor level."},
+   es:{q:"Un plano de planta representa una sección horizontal tomada a aproximadamente qué altura sobre el piso?",opts:["5'-0\"","1'-0\"","8'-0\"","10'-0\""],c:0,exp:"Los planos de planta son vistas tomadas en un corte horizontal a unos 5'-0\" sobre el nivel del piso."}},
+  {en:{q:"The North Elevation of a building refers to ________.",opts:["the elevation facing north, not necessarily the direction a person faces to see it","only the tallest side of the building","the elevation shown on the cover sheet","the side facing the front entrance, always"],c:0,exp:"An elevation is named for the direction it faces — the North Elevation faces north, which is not necessarily the direction a person stands in to view that side of the building."},
+   es:{q:"La Elevación Norte de un edificio se refiere a ________.",opts:["la elevación que da al norte, no necesariamente la dirección en que una persona se para para verla","solo el lado más alto del edificio","la elevación mostrada en la portada","el lado que da a la entrada principal, siempre"],c:0,exp:"Una elevación se nombra según la dirección a la que da — la Elevación Norte da al norte."}},
+  {en:{q:"How many exterior elevations are generally required to clearly show all exterior walls of a typical building?",opts:["Four (front, rear, right side, left side)","Only one","Two (front and rear only)","As many as there are rooms"],c:0,exp:"Generally four or more elevations are needed — front, rear, right side, and left side (or north, south, east, west) — though complex buildings may need more."},
+   es:{q:"¿Cuántas elevaciones exteriores se requieren generalmente para mostrar claramente todos los muros exteriores de un edificio típico?",opts:["Cuatro (frontal, trasera, lateral derecha, lateral izquierda)","Solo una","Dos (frontal y trasera solamente)","Tantas como habitaciones haya"],c:0,exp:"Generalmente se necesitan cuatro o más elevaciones — frontal, trasera, lateral derecha y lateral izquierda."}},
+  {type:'match', en:{prompt:"Match each working drawing type to what it shows.", pairs:[
+      {term:"Floor plan", def:"Arrangement of walls and partitions, viewed from about 5' above the floor"},
+      {term:"Elevation", def:"A scaled view looking directly at a vertical exterior wall"},
+      {term:"Section", def:"A view created by cutting through a building to show internal detail"},
+      {term:"Detail", def:"A plan, elevation, or section at a larger scale to show a special feature"}
+    ], exp:"Floor plans, elevations, sections, and details are the four most essential working drawings — together they describe a building's layout, exterior appearance, internal construction, and special features."},
+   es:{prompt:"Relaciona cada tipo de plano de trabajo con lo que muestra.", pairs:[
+      {term:"Plano de planta", def:"Disposición de muros y particiones, vista desde unos 5' sobre el piso"},
+      {term:"Elevación", def:"Una vista a escala mirando directamente a un muro exterior vertical"},
+      {term:"Sección", def:"Una vista creada al cortar a través de un edificio para mostrar detalle interno"},
+      {term:"Detalle", def:"Una planta, elevación o sección a mayor escala para mostrar una característica especial"}
+    ], exp:"Los planos de planta, elevaciones, secciones y detalles son los cuatro planos de trabajo más esenciales."}},
+  {en:{q:"Room volume requirements, such as minimum glass area for ventilation, are set by ________.",opts:["building codes such as the International Residential Code","the general contractor's personal preference","the supplier's catalog","the HVAC subcontractor only"],c:0,exp:"Codes like the International Residential Code specify minimum requirements — for example, the glass area for a room must be at least 8% of the floor area, with at least 4% of the floor area openable to the outdoors."},
+   es:{q:"Los requisitos de volumen de una habitación, como el área mínima de vidrio para ventilación, los establece ________.",opts:["códigos de construcción como el Código Residencial Internacional","la preferencia personal del contratista general","el catálogo del proveedor","solo el subcontratista de HVAC"],c:0,exp:"Códigos como el Código Residencial Internacional especifican requisitos mínimos, como el área de vidrio de una habitación."}},
+  {en:{q:"On a floor plan, doors leading from a loading dock area are commonly designated with numbers such as 147-1, 147-2, and 147-3. This numbering typically refers to ________.",opts:["the room number the doors are associated with, plus a sequence for each door","the door's exact height in inches","the fire rating class of the door","the manufacturer's model number"],c:0,exp:"Doors are often numbered using the room number they're associated with (Room 147) plus a sequential number for each individual door serving that room."},
+   es:{q:"En un plano de planta, las puertas que salen de un área de muelle de carga se designan comúnmente con números como 147-1, 147-2 y 147-3. Esta numeración típicamente se refiere a ________.",opts:["el número de habitación asociado a las puertas, más una secuencia para cada puerta","la altura exacta de la puerta en pulgadas","la clase de resistencia al fuego de la puerta","el número de modelo del fabricante"],c:0,exp:"Las puertas a menudo se numeran usando el número de la habitación asociada más un número secuencial para cada puerta."}},
+  {en:{q:"Masonry control joints (MCJ) shown on an elevation are used to ________.",opts:["allow for slight movement in a masonry wall and control cracking","mark the location of electrical outlets","show where a door swings","indicate the scale of the drawing"],c:0,exp:"Masonry control joints are shown on elevations at intervals to allow slight movement in masonry walls, helping control where cracking occurs rather than letting it happen randomly."},
+   es:{q:"Las juntas de control de mampostería (MCJ) mostradas en una elevación se usan para ________.",opts:["permitir un ligero movimiento en un muro de mampostería y controlar el agrietamiento","marcar la ubicación de tomas eléctricas","mostrar dónde abre una puerta","indicar la escala del dibujo"],c:0,exp:"Las juntas de control de mampostería permiten un ligero movimiento y ayudan a controlar dónde ocurre el agrietamiento."}},
+  {en:{q:"A longitudinal section is created by passing a cutting plane through ________.",opts:["the long dimension of a building","only the roof","the short dimension of a building","a single door opening"],c:0,exp:"A longitudinal section passes a cutting plane through the long dimension of a building; a transverse section passes through the short dimension."},
+   es:{q:"Una sección longitudinal se crea al pasar un plano de corte por ________.",opts:["la dimensión larga de un edificio","solo el techo","la dimensión corta de un edificio","una sola abertura de puerta"],c:0,exp:"Una sección longitudinal pasa un plano de corte por la dimensión larga de un edificio."}}
+];
+const W3_SECTION3 = [
+  {en:{q:"The best place to begin reading a set of prints is ________.",opts:["the title block","the last page of the specifications","the index of abbreviations","the supplier's invoice"],c:0,exp:"The title block, usually in a corner of each sheet, is the best place to begin reading a set of prints — it includes the project name, location, architect's info, sheet number, and more."},
+   es:{q:"El mejor lugar para comenzar a leer un juego de planos es ________.",opts:["el cuadro de título","la última página de las especificaciones","el índice de abreviaturas","la factura del proveedor"],c:0,exp:"El cuadro de título es el mejor lugar para comenzar a leer un juego de planos."}},
+  {en:{q:"Which of the following is included in a title block?",opts:["Project name and location, architect's name, sheet number","Only the building's square footage","Only the HVAC tonnage","Only the finish schedule"],c:0,exp:"A title block includes the project name and location, architect's name and office location, architect's seal, plan completion date, drafter's initials, sheet number and total number of sheets, and revision information."},
+   es:{q:"¿Cuál de los siguientes se incluye en un cuadro de título?",opts:["Nombre y ubicación del proyecto, nombre del arquitecto, número de hoja","Solo los pies cuadrados del edificio","Solo la capacidad del HVAC","Solo el programa de acabados"],c:0,exp:"Un cuadro de título incluye el nombre y ubicación del proyecto, el nombre del arquitecto y el número de hoja, entre otros."}},
+  {en:{q:"Standard abbreviations on working drawings are written using ________.",opts:["only uppercase letters","only lowercase letters","a mix of upper and lowercase","italics only"],c:0,exp:"Only uppercase letters are used for abbreviations on working drawings, and any abbreviation that spells an actual word ends in a period to distinguish it from the word itself (like IN. for inch)."},
+   es:{q:"Las abreviaturas estándar en los planos de trabajo se escriben usando ________.",opts:["solo letras mayúsculas","solo letras minúsculas","una mezcla de mayúsculas y minúsculas","solo cursivas"],c:0,exp:"Solo se usan letras mayúsculas para las abreviaturas en los planos de trabajo."}},
+  {en:{q:"A symbol on a print is best described as ________.",opts:["a pictorial representation of a structural or material component","a written note only","a type of dimension line","only used on plot plans"],c:0,exp:"A symbol is a pictorial representation of a structural or material component, allowing common objects (like a specific type of window) to be shown consistently at scale."},
+   es:{q:"Un símbolo en un plano se describe mejor como ________.",opts:["una representación pictórica de un componente estructural o material","solo una nota escrita","un tipo de línea de dimensión","usado solo en planos de sitio"],c:0,exp:"Un símbolo es una representación pictórica de un componente estructural o material."}},
+  {en:{q:"IN. and CAB. are examples of ________, which always use uppercase letters and end in a period when they spell a real word.",opts:["abbreviations","symbols","schedules","title blocks"],c:0,exp:"IN. (inch) and CAB. (cabinet) are standard abbreviations — always uppercase, ending in a period when the abbreviation spells an actual word."},
+   es:{q:"IN. y CAB. son ejemplos de ________, que siempre usan letras mayúsculas y terminan en un punto cuando forman una palabra real.",opts:["abreviaturas","símbolos","programas","cuadros de título"],c:0,exp:"IN. (pulgada) y CAB. (gabinete) son abreviaturas estándar."}},
+  {en:{q:"WF and R can each stand for two different words depending on context. WF can mean 'wide flange' or ________, while R can mean 'riser' or ________.",opts:["'wood frame'; 'room'","'water fixture'; 'roof'","'wall finish'; 'reference'","'weatherproof'; 'right'"],c:0,exp:"WF can mean wide flange or wood frame; R can mean riser or room — the same abbreviation can have different meanings depending on the context it's used in."},
+   es:{q:"WF y R pueden significar dos palabras diferentes según el contexto. WF puede significar 'ala ancha' (wide flange) o ________, mientras que R puede significar 'contrahuella' (riser) o ________.",opts:["'entramado de madera' (wood frame); 'habitación' (room)","'accesorio de agua'; 'techo'","'acabado de muro'; 'referencia'","'a prueba de intemperie'; 'derecha'"],c:0,exp:"WF puede significar ala ancha o entramado de madera; R puede significar contrahuella o habitación."}},
+  {en:{q:"A schedule included on a set of prints provides detailed information about ________.",opts:["building components such as windows, doors, or mechanical equipment","only the general contractor's fee","only zoning setback requirements","only the concrete mix design"],c:0,exp:"A schedule is a detailed list that provides information about building components — windows, doors, and mechanical equipment are common examples."},
+   es:{q:"Un programa (schedule) incluido en un juego de planos ofrece información detallada sobre ________.",opts:["componentes de construcción como ventanas, puertas o equipo mecánico","solo la tarifa del contratista general","solo los requisitos de retiro de zonificación","solo el diseño de la mezcla de concreto"],c:0,exp:"Un programa (schedule) da información detallada sobre componentes como ventanas, puertas o equipo mecánico."}}
+];
+const W3_SECTION4 = [
+  {en:{q:"A fixed-sash window is one in which ________.",opts:["the sash is inoperable and cannot be opened","the sash pivots for ventilation","the sash slides only horizontally","the sash is always made of wood"],c:0,exp:"A fixed-sash window has an inoperable sash — it's usually large and often fitted with insulating glass, and cannot be opened for ventilation."},
+   es:{q:"Una ventana de hoja fija es aquella en la que ________.",opts:["la hoja es inoperable y no se puede abrir","la hoja gira para ventilación","la hoja solo se desliza horizontalmente","la hoja siempre es de madera"],c:0,exp:"Una ventana de hoja fija tiene una hoja inoperable — no se puede abrir para ventilación."}},
+  {en:{q:"A window is designated 30/48 on a set of prints. This notation means ________.",opts:["the light is 30 inches wide and 48 inches high","the window costs $30.48","the window is 30 years old, model 48","the rough opening is exactly 30 inches square"],c:0,exp:"Window light-size notation gives width first, then height — a 30/48 window has a light 30\" wide and 48\" high."},
+   es:{q:"Una ventana se designa 30/48 en un juego de planos. Esta notación significa ________.",opts:["la luz mide 30 pulgadas de ancho y 48 de alto","la ventana cuesta $30.48","la ventana tiene 30 años, modelo 48","la abertura en bruto es exactamente 30 pulgadas cuadradas"],c:0,exp:"La notación de tamaño de luz de ventana da primero el ancho y luego la altura."}},
+  {en:{q:"A single-light window is designated 30/36. What is the area of that light, in square inches?",opts:["1,080 square inches","66 square inches","930 square inches","1,116 square inches"],c:0,exp:"30 × 36 = 1,080 square inches."},
+   es:{q:"Una ventana de una sola luz se designa 30/36. ¿Cuál es el área de esa luz, en pulgadas cuadradas?",opts:["1,080 pulgadas cuadradas","66 pulgadas cuadradas","930 pulgadas cuadradas","1,116 pulgadas cuadradas"],c:0,exp:"30 × 36 = 1,080 pulgadas cuadradas."}},
+  {en:{q:"Door hand (the direction a door swings) is determined by ________.",opts:["standing on the outside of the door","standing on the inside of the door, always","checking the door's fire rating","reading only the door schedule, never the plan"],c:0,exp:"When determining door hand, the viewer always stands on the outside of the door — the hallway side or street side of an entrance door."},
+   es:{q:"El lado de apertura de una puerta se determina ________.",opts:["parándose en el exterior de la puerta","parándose siempre en el interior de la puerta","revisando la clasificación de resistencia al fuego","leyendo solo el programa de puertas, nunca el plano"],c:0,exp:"Al determinar el lado de apertura, el observador siempre se para en el exterior de la puerta."}},
+  {en:{q:"A hollow-core door is NOT permitted for use in ________.",opts:["exterior openings, since it lacks sufficient strength and fire resistance","interior closets","interior bedrooms","interior hallways"],c:0,exp:"Hollow-core doors, with a corrugated fiber or foam core, are not permitted for exterior openings because they don't have sufficient strength or fire resistance — solid-core doors are used there instead."},
+   es:{q:"Una puerta de núcleo hueco NO está permitida para usarse en ________.",opts:["aberturas exteriores, ya que no tiene suficiente resistencia ni resistencia al fuego","closets interiores","dormitorios interiores","pasillos interiores"],c:0,exp:"Las puertas de núcleo hueco no están permitidas en aberturas exteriores por falta de resistencia."}},
+  {en:{q:"Fire door classifications (Class A through E) are based on ________.",opts:["how long the door assembly withstands failure and penetration by fire","the door's color","the door's manufacturer","the door's swing direction"],c:0,exp:"The five fire door classifications are based on the length of time a door opening withstands failure and penetration by fire — for example, Class A doors protect openings in walls separating buildings or dividing a building into fire areas."},
+   es:{q:"Las clasificaciones de puertas cortafuego (Clase A a E) se basan en ________.",opts:["cuánto tiempo resiste el ensamble de la puerta la falla y penetración del fuego","el color de la puerta","el fabricante de la puerta","la dirección de apertura de la puerta"],c:0,exp:"Las clasificaciones de puertas cortafuego se basan en cuánto tiempo resisten la penetración del fuego."}},
+  {en:{q:"A straight-run stairway is designated '14 R UP' on a plan view. This means ________.",opts:["there are 14 risers going up to the next floor","the stair is 14 feet long","there are 14 treads that are each 1 foot wide","the stair was built 14 years ago"],c:0,exp:"'14 R UP' means there are 14 risers going up from that point to the floor above — a direct notation of riser count and direction."},
+   es:{q:"Una escalera de tramo recto se designa '14 R UP' en una vista de planta. Esto significa ________.",opts:["hay 14 contrahuellas subiendo hasta el siguiente piso","la escalera mide 14 pies de largo","hay 14 huellas que miden cada una 1 pie de ancho","la escalera se construyó hace 14 años"],c:0,exp:"'14 R UP' significa que hay 14 contrahuellas subiendo desde ese punto hasta el piso de arriba."}},
+  {en:{q:"Using the stair ratio formula T + R = 17\" to 18\", if a riser (R) is 7 inches, what tread width (T) would satisfy the low end of that formula?",opts:["10 inches","7 inches","24 inches","17 inches"],c:0,exp:"17\" − 7\" = 10\", so a 10\" tread would satisfy the low end of the T+R=17\"-to-18\" formula (and an 11\" tread would satisfy the high end)."},
+   es:{q:"Usando la fórmula de relación de escalera T + R = 17\" a 18\", si una contrahuella (R) mide 7 pulgadas, ¿qué ancho de huella (T) satisfaría el límite inferior de esa fórmula?",opts:["10 pulgadas","7 pulgadas","24 pulgadas","17 pulgadas"],c:0,exp:"17\" − 7\" = 10\", así que una huella de 10\" satisface el límite inferior de la fórmula."}},
+  {en:{q:"Per the International Building Code referenced in the text, the minimum headroom required for a stairway is ________.",opts:["6'-8\"","5'-0\"","7'-0\"","8'-0\""],c:0,exp:"Minimum headroom for all portions of a stairway is 6'-8\", measured vertically from an inclined plane formed by the tread nosings."},
+   es:{q:"Según el Código Internacional de Construcción mencionado en el texto, el espacio libre mínimo requerido para una escalera es ________.",opts:["6'-8\"","5'-0\"","7'-0\"","8'-0\""],c:0,exp:"El espacio libre mínimo para todas las partes de una escalera es 6'-8\"."}},
+  {en:{q:"Handrails are required on stairways with ________.",opts:["two or more risers","five or more risers","only spiral stairways","only commercial stairways, never residential"],c:0,exp:"Handrails must be provided for stairways with two or more risers — one handrail is required within dwelling units, and two are required on most other stairways."},
+   es:{q:"Se requieren pasamanos en escaleras con ________.",opts:["dos o más contrahuellas","cinco o más contrahuellas","solo escaleras de caracol","solo escaleras comerciales, nunca residenciales"],c:0,exp:"Se requieren pasamanos en escaleras con dos o más contrahuellas."}}
+];
+const W3_TEST = [
+  {en:{q:"The point of beginning (POB) is shown on a plot plan as 312'-0\". A one-story house with full basement has a first floor elevation of 316'-6\", and the basement is 9'-0\" below the first floor. What is the basement floor's elevation?",opts:["307'-6\"","305'-6\"","309'-6\"","303'-0\""],c:0,exp:"316'-6\" − 9'-0\" = 307'-6\"."},
+   es:{q:"El punto de partida (POB) se muestra en un plano de sitio como 312'-0\". Una casa de un piso con sótano completo tiene una elevación de primer piso de 316'-6\", y el sótano está 9'-0\" debajo. ¿Cuál es la elevación del piso del sótano?",opts:["307'-6\"","305'-6\"","309'-6\"","303'-0\""],c:0,exp:"316'-6\" − 9'-0\" = 307'-6\"."}},
+  {en:{q:"A partition is framed with 2×4 studs and finished with 1/2\" gypsum board on both sides. What is the actual partition thickness?",opts:["4 1/2 inches","3 1/2 inches","5 inches","4 inches"],c:0,exp:"3 1/2\" (stud) + 1/2\" + 1/2\" (gypsum both sides) = 4 1/2\"."},
+   es:{q:"Una partición está enmarcada con montantes de 2×4 y terminada con placa de yeso de 1/2\" en ambos lados. ¿Cuál es el grosor real de la partición?",opts:["4 1/2 pulgadas","3 1/2 pulgadas","5 pulgadas","4 pulgadas"],c:0,exp:"3 1/2\" + 1/2\" + 1/2\" = 4 1/2\"."}},
+  {en:{q:"A single-light window is designated 30/36. What is the area of the light in square inches?",opts:["1,080 square inches","66 square inches","900 square inches","1,116 square inches"],c:0,exp:"30 × 36 = 1,080 square inches."},
+   es:{q:"Una ventana de una sola luz se designa 30/36. ¿Cuál es el área de la luz en pulgadas cuadradas?",opts:["1,080 pulgadas cuadradas","66 pulgadas cuadradas","900 pulgadas cuadradas","1,116 pulgadas cuadradas"],c:0,exp:"30 × 36 = 1,080 pulgadas cuadradas."}},
+  {en:{q:"A set of straight-run stairs is designated 16 R UP, with each riser 6\" high. What is the total rise of the stairs?",opts:["96 inches (8 feet)","16 feet","96 feet","6 feet"],c:0,exp:"16 risers × 6\" each = 96 inches, or 8 feet, of total rise."},
+   es:{q:"Un tramo de escaleras rectas se designa 16 R UP, con cada contrahuella de 6\" de altura. ¿Cuál es la altura total de la escalera?",opts:["96 pulgadas (8 pies)","16 pies","96 pies","6 pies"],c:0,exp:"16 contrahuellas × 6\" cada una = 96 pulgadas, u 8 pies, de altura total."}},
+  {en:{q:"The best place to begin reading a set of prints is ___.",opts:["the title block","the last sheet","the specifications index","the supplier catalog"],c:0,exp:"The title block is the best place to begin reading a set of prints."},
+   es:{q:"El mejor lugar para comenzar a leer un juego de planos es ___.",opts:["el cuadro de título","la última hoja","el índice de especificaciones","el catálogo del proveedor"],c:0,exp:"El cuadro de título es el mejor lugar para comenzar a leer un juego de planos."}},
+  {en:{q:"The three classifications of windows are fixed-sash, sliding-sash, and ___.",opts:["swinging-sash","double-glazed","tempered","insulated"],c:0,exp:"The three window classifications are fixed-sash, sliding-sash, and swinging-sash."},
+   es:{q:"Las tres clasificaciones de ventanas son de hoja fija, de hoja corrediza y ___.",opts:["de hoja batiente","de doble vidrio","templada","aislada"],c:0,exp:"Las tres clasificaciones de ventanas son de hoja fija, corrediza y batiente."}},
+  {en:{q:"When determining door hand, the viewer always stands on the ___ of the door.",opts:["outside","inside","hinge side","latch side"],c:0,exp:"Door hand is always determined standing on the outside of the door."},
+   es:{q:"Al determinar el lado de apertura de una puerta, el observador siempre se para en el ___ de la puerta.",opts:["exterior","interior","lado de la bisagra","lado del pestillo"],c:0,exp:"El lado de apertura siempre se determina parándose en el exterior de la puerta."}},
+  {en:{q:"Minimum headroom required for a stairway, per the International Building Code, is ___.",opts:["6'-8\"","5'-0\"","7'-6\"","8'-0\""],c:0,exp:"Minimum stairway headroom is 6'-8\"."}, es:{q:"El espacio libre mínimo requerido para una escalera, según el Código Internacional de Construcción, es ___.",opts:["6'-8\"","5'-0\"","7'-6\"","8'-0\""],c:0,exp:"El espacio libre mínimo de escalera es 6'-8\"."}},
+  {en:{q:"Handrails are required on stairways with ___ or more risers.",opts:["two","five","one","ten"],c:0,exp:"Handrails are required on stairways with two or more risers."},
+   es:{q:"Se requieren pasamanos en escaleras con ___ o más contrahuellas.",opts:["dos","cinco","una","diez"],c:0,exp:"Se requieren pasamanos en escaleras con dos o más contrahuellas."}},
+  {en:{q:"A title block includes all of the following EXCEPT ___.",opts:["the general contractor's payroll records","the project name and location","the sheet number","the architect's name"],c:0,exp:"A title block includes the project name/location, architect's name, sheet number, and similar info — not payroll records, which have nothing to do with reading a print."},
+   es:{q:"Un cuadro de título incluye todo lo siguiente EXCEPTO ___.",opts:["los registros de nómina del contratista general","el nombre y ubicación del proyecto","el número de hoja","el nombre del arquitecto"],c:0,exp:"Un cuadro de título incluye el nombre/ubicación del proyecto, el arquitecto y el número de hoja — no registros de nómina."}},
+  {en:{q:"A hollow-core door should NOT be used ___.",opts:["for an exterior opening","for an interior closet","for an interior bedroom","for an interior hallway"],c:0,exp:"Hollow-core doors lack sufficient strength/fire resistance for exterior openings."},
+   es:{q:"Una puerta de núcleo hueco NO debe usarse ___.",opts:["en una abertura exterior","en un closet interior","en un dormitorio interior","en un pasillo interior"],c:0,exp:"Las puertas de núcleo hueco no tienen suficiente resistencia para aberturas exteriores."}},
+  {en:{q:"On a floor plan, the North Elevation refers to ___.",opts:["the wall facing north, regardless of which way a viewer stands","the tallest wall","whichever wall faces the front door","the wall shown on sheet A-1 only"],c:0,exp:"An elevation is named for the compass direction it faces."},
+   es:{q:"En un plano de planta, la Elevación Norte se refiere a ___.",opts:["el muro que da al norte, sin importar hacia dónde mire el observador","el muro más alto","el muro que da a la puerta principal","el muro mostrado solo en la hoja A-1"],c:0,exp:"Una elevación se nombra según la dirección de la brújula a la que da."}},
+  {en:{q:"True or False: Fire door classifications A through E are based on the door's color.",opts:["True","False"],c:1,exp:"False — fire door classifications are based on how long the door assembly withstands failure and penetration by fire, not its color."},
+   es:{q:"Verdadero o falso: las clasificaciones de puertas cortafuego de A a E se basan en el color de la puerta.",opts:["Verdadero","Falso"],c:1,exp:"Falso — se basan en cuánto tiempo resiste el ensamble la penetración del fuego, no el color."}},
+  {en:{q:"A rectangular commercial building measures 40'-0\" × 60'-0\". What is its floor area?",opts:["2,400 sq ft","2,000 sq ft","2,200 sq ft","1,800 sq ft"],c:0,exp:"40 × 60 = 2,400 square feet."},
+   es:{q:"Un edificio comercial rectangular mide 40'-0\" × 60'-0\". ¿Cuál es su área de piso?",opts:["2,400 pies²","2,000 pies²","2,200 pies²","1,800 pies²"],c:0,exp:"40 × 60 = 2,400 pies cuadrados."}},
+  {en:{q:"Standard abbreviations on working drawings ___.",opts:["use only uppercase letters","use only lowercase letters","are written in italics","always include a hyphen"],c:0,exp:"Only uppercase letters are used for abbreviations on working drawings."},
+   es:{q:"Las abreviaturas estándar en los planos de trabajo ___.",opts:["usan solo letras mayúsculas","usan solo letras minúsculas","se escriben en cursiva","siempre incluyen un guion"],c:0,exp:"Solo se usan letras mayúsculas para las abreviaturas."}}
+];
+const W3_CARDS = [
+  {en:{f:"Plot plan",b:"Scaled drawing showing a lot's shape/size and the building's location, size, and finished floor elevation on it."},es:{f:"Plano de sitio",b:"Dibujo a escala que muestra la forma/tamaño del lote y la ubicación/tamaño del edificio."}},
+  {en:{f:"Point of beginning (POB)",b:"A fixed reference location for horizontal/vertical dimensions on a site."},es:{f:"Punto de partida (POB)",b:"Una ubicación fija de referencia para dimensiones horizontales/verticales."}},
+  {en:{f:"Benchmark",b:"A fixed marker of known elevation used as a reference point (often related to the POB)."},es:{f:"Punto de referencia (benchmark)",b:"Un marcador fijo de elevación conocida usado como punto de referencia."}},
+  {en:{f:"Contour line",b:"Shows lot slope — solid lines are finished grade, dashed lines are natural/existing grade."},es:{f:"Línea de contorno",b:"Muestra la pendiente del lote — líneas continuas son nivel terminado, discontinuas son nivel natural."}},
+  {en:{f:"Setback",b:"Minimum distance, set by zoning ordinance, between a street/property line and a building."},es:{f:"Retiro (setback)",b:"Distancia mínima, fijada por ordenanza, entre una calle/línea de propiedad y un edificio."}},
+  {en:{f:"Floor plan",b:"View of a building's walls/partitions, taken as a horizontal section about 5' above the floor."},es:{f:"Plano de planta",b:"Vista de los muros/particiones de un edificio, en una sección horizontal a unos 5' del piso."}},
+  {en:{f:"Elevation",b:"A scaled view looking directly at a vertical exterior wall, named for the compass direction it faces."},es:{f:"Elevación",b:"Vista a escala de un muro exterior vertical, nombrada según la dirección a la que da."}},
+  {en:{f:"Title block",b:"Usually in a corner of a sheet — has the project name/location, architect, sheet number, and more. Best place to start reading a print."},es:{f:"Cuadro de título",b:"Tiene el nombre/ubicación del proyecto, arquitecto y número de hoja. Mejor lugar para empezar a leer un plano."}},
+  {en:{f:"Abbreviation rule",b:"Only uppercase letters; ends in a period if it spells an actual word (e.g. IN.)."},es:{f:"Regla de abreviatura",b:"Solo mayúsculas; termina en punto si forma una palabra real (ej. IN.)."}},
+  {en:{f:"Window light notation",b:"Written as width/height, e.g. 30/48 = 30\" wide × 48\" high light."},es:{f:"Notación de luz de ventana",b:"Se escribe como ancho/alto, ej. 30/48 = luz de 30\" × 48\"."}},
+  {en:{f:"Door hand",b:"The direction a door swings, determined by standing on the outside of the door."},es:{f:"Lado de apertura",b:"La dirección en que abre una puerta, determinada parándose en el exterior."}},
+  {en:{f:"Solid-core vs. hollow-core door",b:"Solid-core: heavier, used for exterior openings. Hollow-core: lighter, interior only."},es:{f:"Puerta de núcleo sólido vs. hueco",b:"Núcleo sólido: más pesada, para exteriores. Núcleo hueco: más liviana, solo interior."}},
+  {en:{f:"Fire door classes A–E",b:"Based on how long the door assembly withstands failure/penetration by fire."},es:{f:"Clases de puerta cortafuego A–E",b:"Se basan en cuánto tiempo resiste el ensamble la penetración del fuego."}},
+  {en:{f:"Stair ratio formula",b:"T + R = 17\" to 18\" (tread width + riser height)."},es:{f:"Fórmula de relación de escalera",b:"T + R = 17\" a 18\" (huella + contrahuella)."}},
+  {en:{f:"Minimum stair headroom",b:"6'-8\", per the International Building Code."},es:{f:"Espacio libre mínimo de escalera",b:"6'-8\", según el Código Internacional de Construcción."}},
+  {en:{f:"Handrail requirement",b:"Required on stairways with two or more risers."},es:{f:"Requisito de pasamanos",b:"Requerido en escaleras con dos o más contrahuellas."}},
+  {en:{f:"Schedule",b:"A detailed list on a print giving info about components like windows, doors, or equipment."},es:{f:"Programa (schedule)",b:"Una lista detallada en un plano con información sobre componentes como ventanas o puertas."}}
+];
+
+const MODULES = [
+  { id:'w1', comingSoon:false, openTest:true, num:'1',
+    startDate:'2026-08-18', examDate:'2026-08-25',
+    title:{en:"Week 1: Orthographic Projections & Types of Drawings", es:"Semana 1: Proyecciones Ortográficas y Tipos de Dibujos"},
+    sections:[
+      {key:'s1', label:{en:"1. Project Roles & Print Basics", es:"1. Roles del Proyecto y Fundamentos de los Planos"}, bank:W1_SECTION1},
+      {key:'s2', label:{en:"2. Types of Drawings", es:"2. Tipos de Dibujos"}, bank:W1_SECTION2}
+    ],
+    moduleTest: W1_TEST, cards: W1_CARDS
+  },
+  { id:'w2', comingSoon:false, openTest:true, num:'2',
+    startDate:'2026-08-25', examDate:'2026-09-01',
+    title:{en:"Week 2: Sketching Views & Scales", es:"Semana 2: Bocetos de Vistas y Escalas"},
+    sections:[
+      {key:'s1', label:{en:"1. Alphabet of Lines", es:"1. Alfabeto de Líneas"}, bank:W2_SECTION1},
+      {key:'s2', label:{en:"2. Scales & Measuring", es:"2. Escalas y Medición"}, bank:W2_SECTION2},
+      {key:'s3', label:{en:"3. Views & Sketching", es:"3. Vistas y Bocetos"}, bank:W2_SECTION3}
+    ],
+    moduleTest: W2_TEST, cards: W2_CARDS
+  },
+  { id:'w3', comingSoon:false, openTest:true, num:'3',
+    startDate:'2026-09-01', examDate:'2026-09-08',
+    title:{en:"Week 3: Dimensions, Plans & Trade Math", es:"Semana 3: Dimensiones, Planos y Matemáticas de Oficio"},
+    sections:[
+      {key:'s1', label:{en:"1. Dimensioning & Site Plans", es:"1. Acotado y Planos de Sitio"}, bank:W3_SECTION1},
+      {key:'s2', label:{en:"2. Floor Plans, Elevations & Sections", es:"2. Plantas, Elevaciones y Secciones"}, bank:W3_SECTION2},
+      {key:'s3', label:{en:"3. Title Blocks, Abbreviations & Symbols", es:"3. Cuadros de Título, Abreviaturas y Símbolos"}, bank:W3_SECTION3},
+      {key:'s4', label:{en:"4. Windows, Doors & Stairways", es:"4. Ventanas, Puertas y Escaleras"}, bank:W3_SECTION4}
+    ],
+    moduleTest: W3_TEST, cards: W3_CARDS
+  },
+  { id:'w4', comingSoon:true, num:'4', startDate:'2026-09-08', examDate:'2026-09-15', title:{en:"Week 4: Light Frame Construction & Material Symbols", es:"Semana 4: Construcción de Entramado Ligero y Símbolos de Materiales"} },
+  { id:'w5', comingSoon:true, num:'5', startDate:'2026-09-15', examDate:'2026-09-22', title:{en:"Week 5: Brick-Veneer Residence — Plans", es:"Semana 5: Residencia de Chapa de Ladrillo — Planos"} },
+  { id:'w6', comingSoon:true, num:'6', startDate:'2026-09-22', examDate:'2026-09-29', title:{en:"Week 6: Intro to Specifications / Wendy's Restaurant Plans", es:"Semana 6: Introducción a Especificaciones / Planos de Wendy's"} },
+  { id:'w7', comingSoon:true, num:'7', startDate:'2026-09-29', examDate:'2026-10-06', title:{en:"Week 7: Wendy's Restaurant Plans (cont'd)", es:"Semana 7: Planos de Wendy's (continuación)"} },
+  { id:'w8', comingSoon:true, num:'8', startDate:'2026-10-06', examDate:'2026-10-20', title:{en:"Week 8: Veterinary Center — Site, Building & Structure", es:"Semana 8: Centro Veterinario — Sitio, Edificio y Estructura"} },
+  { id:'w9', comingSoon:true, num:'9', startDate:'2026-10-13', examDate:'2026-10-20', title:{en:"No class Oct 13 (College Professional Development / SEED day)", es:"Sin clase 13 de oct. (Día SEED de desarrollo profesional)"} },
+  { id:'w10', comingSoon:true, num:'10', startDate:'2026-10-20', examDate:'2026-10-20', title:{en:"Week 10: Midterm Exam", es:"Semana 10: Examen de Medio Semestre"} },
+  { id:'w11', comingSoon:true, num:'11', startDate:'2026-10-27', examDate:'2026-11-03', title:{en:"Week 11: Veterinary Center — Mechanical, Electrical & Plumbing", es:"Semana 11: Centro Veterinario — Mecánico, Eléctrico y Plomería"} },
+  { id:'w12', comingSoon:true, num:'12', startDate:'2026-11-03', examDate:'2026-11-10', title:{en:"Week 12: Quantity Takeoff", es:"Semana 12: Cuantificación de Materiales"} },
+  { id:'w13', comingSoon:true, num:'13', startDate:'2026-11-10', examDate:'2026-11-17', title:{en:"Week 13: 3D Modeling", es:"Semana 13: Modelado 3D"} },
+  { id:'w14', comingSoon:true, num:'14', startDate:'2026-11-17', examDate:'2026-11-24', title:{en:"Week 14: 3D Modeling (cont'd)", es:"Semana 14: Modelado 3D (continuación)"} },
+  { id:'w15', comingSoon:true, num:'15', startDate:'2026-11-24', examDate:'2026-12-01', title:{en:"Week 15: Final Exam Review / Project Presentations", es:"Semana 15: Repaso para el Examen Final / Presentaciones de Proyecto"} },
+  { id:'w16', comingSoon:true, num:'16', startDate:'2026-12-01', examDate:'2026-12-01', title:{en:"Week 16: Final Exam", es:"Semana 16: Examen Final"} }
+];
+
+/* ============ STATE ============ */
+let lang = localStorage.getItem('pr_lang') || 'en';
+let progress = JSON.parse(localStorage.getItem('pr_progress') || '{}');
+let cumulative = JSON.parse(localStorage.getItem('pr_cumulative') || '{}');
+let topTab = 'home';
+let homeView = null; // null = module map, {modIdx} = module detail
+let quizState = null;
+let cardState = { modIdx:0, order:[], idx:0 };
+let missed = JSON.parse(localStorage.getItem('pr_missed') || '[]'); // [{key, item}]
+let lastModIdx = localStorage.getItem('pr_last_mod');
+lastModIdx = lastModIdx===null ? null : parseInt(lastModIdx);
+let textScale = parseInt(localStorage.getItem('pr_textscale') || '0');
+let theme = localStorage.getItem('pr_theme') || 'dark';
+const TEXT_SCALES = [16, 18, 21];
+
+function saveProgress(){ localStorage.setItem('pr_progress', JSON.stringify(progress)); }
+function saveCumulative(){ localStorage.setItem('pr_cumulative', JSON.stringify(cumulative)); }
+function saveMissed(){ localStorage.setItem('pr_missed', JSON.stringify(missed)); }
+function ensureProgress(modId){
+  if(!progress[modId]) progress[modId] = { sec:{}, testScore:0, testPassed:false };
+  return progress[modId];
+}
+function t(key){ return T[lang][key]; }
+
+/* ---- missed-question tracking (simple spaced repetition) ---- */
+function missedKey(item){ return item && item.en ? (item.en.q || item.en.prompt) : null; }
+function addMissed(item){
+  const k = missedKey(item); if(!k) return;
+  if(!missed.find(x=>x.key===k)) missed.push({key:k, item});
+}
+function removeMissed(item){
+  const k = missedKey(item); if(!k) return;
+  missed = missed.filter(x=>x.key!==k);
+}
+
+/* ---- quick review: random mixed pull from everything built so far ---- */
+// Fisher-Yates shuffle — always returns a NEW array so the original question
+// bank (shared, reused across quiz attempts) is never mutated in place.
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* ---- module dates + "add to calendar" (.ics) ---- */
+const STUDY_TOOL_URL = 'https://lawrencetotimeh.com/print-reading-study/';
+// Parse a plain "YYYY-MM-DD" as LOCAL midnight (not UTC) so the displayed/compared
+// date never shifts a day off in negative-UTC-offset timezones.
+function parseISODate(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+function formatDisplayDate(iso){
+  return parseISODate(iso).toLocaleDateString(lang==='es'?'es-ES':'en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+function daysUntil(iso){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = parseISODate(iso);
+  return Math.round((target - today) / 86400000);
+}
+// ICS date format for an all-day VALUE=DATE event: YYYYMMDD, computed from the
+// local-midnight parse above (not toISOString, which can shift a day via UTC).
+function icsDate(dateObj){
+  const y=dateObj.getFullYear(), m=String(dateObj.getMonth()+1).padStart(2,'0'), d=String(dateObj.getDate()).padStart(2,'0');
+  return `${y}${m}${d}`;
+}
+function icsDatePlusDays(iso, days){
+  const d = parseISODate(iso); d.setDate(d.getDate()+days); return d;
+}
+function escapeICSText(s){
+  return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+}
+// Rough "how long will this take" estimate so a reminder can tell someone what
+// they're actually signing up for, not just "go study." Not scientific — just
+// (question count * a bit) + (flashcard count * a bit) + a flat orientation
+// buffer, rounded to a friendly number. Returns null for not-yet-built modules
+// (no sections/test/cards to count yet).
+function estimateStudyMinutes(m){
+  const sections = m.sections || [];
+  const qCount = sections.reduce((sum,s)=> sum + (s.bank ? s.bank.length : 0), 0) + (m.moduleTest ? m.moduleTest.length : 0);
+  const cardCount = m.cards ? m.cards.length : 0;
+  if(qCount === 0 && cardCount === 0) return null;
+  let mins = Math.round((qCount*1.2 + cardCount*0.5) / 5) * 5;
+  mins += 15;
+  return Math.max(20, mins);
+}
+// All-day event (module start / test day) — DTEND is the next day per the
+// iCalendar spec for VALUE=DATE all-day events (end date is exclusive).
+function icsEvent({summary, description, dateObj}){
+  const dt = icsDate(dateObj);
+  const endObj = new Date(dateObj); endObj.setDate(endObj.getDate()+1);
+  const uid = `${dt}-${Math.random().toString(36).slice(2)}@print-reading-study`;
+  return [
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTART;VALUE=DATE:${dt}`,
+    `DTEND;VALUE=DATE:${icsDate(endObj)}`,
+    `SUMMARY:${escapeICSText(summary)}`,
+    `DESCRIPTION:${escapeICSText(description)}`,
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Reminder',
+    'TRIGGER:-PT9H',
+    'END:VALARM',
+    'END:VEVENT'
+  ].join('\r\n');
+}
+// Timed study-reminder event, at the person's chosen time of day, 45 minutes
+// long. Deliberately "floating" local time (no Z / TZID) so whatever device
+// this gets opened on shows it at that clock time on that device — the
+// simplest correct behavior for a personal study reminder.
+function icsTimedEvent({summary, description, dateObj, timeStr, durationMinutes}){
+  const [hh,mm] = timeStr.split(':').map(Number);
+  const start = new Date(dateObj); start.setHours(hh, mm, 0, 0);
+  const end = new Date(start); end.setMinutes(end.getMinutes() + (durationMinutes||45));
+  const fmt = (d)=> `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}00`;
+  const uid = `${fmt(start)}-${Math.random().toString(36).slice(2)}@print-reading-study`;
+  return [
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${escapeICSText(summary)}`,
+    `DESCRIPTION:${escapeICSText(description)}`,
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Reminder',
+    'TRIGGER:-PT15M',
+    'END:VALARM',
+    'END:VEVENT'
+  ].join('\r\n');
+}
+
+/* ---- study time preferences (saved once, reused for every module) ---- */
+const STUDY_PREF_KEY = 'pr_study_prefs';
+function getStudyPrefs(){
+  try{ const raw = localStorage.getItem(STUDY_PREF_KEY); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+}
+function saveStudyPrefs(prefs){ localStorage.setItem(STUDY_PREF_KEY, JSON.stringify(prefs)); }
+// Spaced (recommended): reminders 7, 3, and 1 day before the test — distributed
+// practice beats one cram session for actually remembering the material.
+// Single: one reminder 3 days out, for anyone who'd rather keep it simple.
+const CADENCE_OFFSETS = { spaced:[-3,-1], single:[-1] };
+
+// Builds one .ics file per module: the module's start date (all-day), one or
+// more timed study reminders leading up to the test (per the saved cadence
+// preference, at the saved time of day), and the test day itself (all-day).
+// Every description carries a link straight back to the study tool and the
+// estimated time the module takes, so a reminder popping up on someone's phone
+// tells them what they're actually signing up for, not just "go study."
+function buildModuleICS(m, prefs){
+  const events = [];
+  const mins = estimateStudyMinutes(m);
+  const minsNote = mins ? `\n${t('estStudyTime')(mins)}` : '';
+  events.push(icsEvent({
+    summary: t('icsStartSummary')(m.num),
+    description: `${t('icsStartDesc')(m.title[lang])}${minsNote}\n\n${t('icsLinkLabel')}: ${STUDY_TOOL_URL}`,
+    dateObj: parseISODate(m.startDate)
+  }));
+  if(m.examDate){
+    const examDisplay = formatDisplayDate(m.examDate);
+    const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+    const startMidnight = parseISODate(m.startDate);
+    const offsets = CADENCE_OFFSETS[prefs.cadence] || CADENCE_OFFSETS.spaced;
+    offsets.forEach(offset=>{
+      const reminderDate = icsDatePlusDays(m.examDate, offset);
+      // Skip reminders that would land before the module even starts, or in the past.
+      if(reminderDate < startMidnight || reminderDate < todayMidnight) return;
+      const summary = mins ? t('icsStudyReminderTitle')(m.num, mins) : t('icsStudySummary')(m.num);
+      events.push(icsTimedEvent({
+        summary,
+        description: `${t('icsStudyDesc')(m.title[lang], examDisplay)}${minsNote}\n\n${t('icsLinkLabel')}: ${STUDY_TOOL_URL}`,
+        dateObj: reminderDate,
+        timeStr: prefs.time,
+        durationMinutes: mins || 45
+      }));
+    });
+    events.push(icsEvent({
+      summary: t('icsExamSummary')(m.num),
+      description: `${t('icsExamDesc')(m.title[lang])}\n\n${t('icsLinkLabel')}: ${STUDY_TOOL_URL}`,
+      dateObj: parseISODate(m.examDate)
+    }));
+  }
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Print Reading Study Tool//EN',
+    'CALSCALE:GREGORIAN',
+    ...events,
+    'END:VCALENDAR'
+  ].join('\r\n');
+}
+function triggerICSDownload(m, prefs){
+  const ics = buildModuleICS(m, prefs);
+  const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `PrintReading-Week-${m.num}.ics`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+}
+// Entry point every "Add to calendar" button calls. First time ever: opens the
+// one-time study-time/cadence picker, saves the answer, then downloads. Every
+// time after that: prefs are already saved, so this goes straight to the
+// download with zero extra clicks.
+function downloadModuleICS(m){
+  const prefs = getStudyPrefs();
+  if(prefs){ triggerICSDownload(m, prefs); return; }
+  openStudyPrefModal(()=> triggerICSDownload(m, getStudyPrefs()));
+}
+function buildQuickReviewBank(size){
+  let pool = [];
+  MODULES.forEach(m=>{
+    if(m.comingSoon) return;
+    m.sections.forEach(s=>{ pool = pool.concat(s.bank); });
+    pool = pool.concat(m.moduleTest);
+  });
+  pool = shuffleArray(pool);
+  return pool.slice(0, Math.min(size, pool.length));
+}
+
+/* ---- text size ---- */
+function applyTextScale(){
+  document.documentElement.style.fontSize = TEXT_SCALES[textScale] + 'px';
+  localStorage.setItem('pr_textscale', textScale);
+}
+
+/* ---- light / dark theme ---- */
+function applyTheme(){
+  document.body.classList.toggle('light-mode', theme==='light');
+  const btn = document.getElementById('btnTheme');
+  if(btn) btn.textContent = theme==='light' ? '☀️' : '🌙';
+  localStorage.setItem('pr_theme', theme);
+}
+
+/* ---- simple day streak ---- */
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+let streakDates = JSON.parse(localStorage.getItem('pr_streak') || '[]');
+(function recordVisitToday(){
+  const today = todayStr();
+  if(!streakDates.includes(today)){ streakDates.push(today); localStorage.setItem('pr_streak', JSON.stringify(streakDates)); }
+})();
+function currentStreak(){
+  const set = new Set(streakDates);
+  let streak = 0; let d = new Date();
+  while(true){
+    const key = d.toISOString().slice(0,10);
+    if(set.has(key)){ streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  return streak;
+}
+
+function isModuleFullyDone(i){
+  const m = MODULES[i]; if(m.comingSoon) return false;
+  const p = progress[m.id]; if(!p) return false;
+  const secOk = m.sections.every(s => (p.sec[s.key]||0) >= 85);
+  return secOk && p.testPassed;
+}
+function isCumulativePassed(i){ return cumulative['after_'+MODULES[i].id]?.passed === true; }
+function isCumulativeAvailable(i){ return i>=1; }
+// Open access: any module with real content is available immediately. The only
+// thing gating a module now is whether it actually has content built yet
+// (comingSoon) — no more "pass the last module first" requirement.
+function isModuleUnlocked(i){
+  return !MODULES[i].comingSoon;
+}
+function combinedTestBank(uptoIdx){
+  let bank = [];
+  for(let j=0;j<=uptoIdx;j++){ if(!MODULES[j].comingSoon) bank = bank.concat(MODULES[j].moduleTest); }
+  return bank;
+}
+
+function setLang(l){
+  lang = l; localStorage.setItem('pr_lang', l);
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnES').classList.toggle('active', l==='es');
+  document.getElementById('subtitle').textContent = t('subtitle');
+  document.getElementById('footerNote').textContent = t('footer');
+  document.getElementById('glossCloseBtn').textContent = t('close');
+  if(document.getElementById('onboardingOverlay').style.display === 'flex'){
+    document.getElementById('onboardTitle').textContent = t('onboardTitle');
+    document.getElementById('onboardBody').textContent = t('onboardBody');
+    document.getElementById('onboardCloseBtn').textContent = t('onboardClose');
+  }
+  renderTopTabs(); renderPanel();
+}
+
+function renderTopTabs(){
+  const wrap = document.getElementById('topTabs');
+  const items = [ {key:'home', label:t('tabHome')}, {key:'cards', label:t('tabCards')}, {key:'support', label:t('tabSupport')} ];
+  wrap.innerHTML = '';
+  items.forEach(it=>{
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (topTab===it.key?' active':'');
+    b.textContent = it.label;
+    b.onclick = ()=>{ topTab = it.key; homeView=null; quizState=null; renderTopTabs(); renderPanel(); };
+    wrap.appendChild(b);
+  });
+}
+
+function renderPanel(){
+  stopSpeaking();
+  const panel = document.getElementById('panel');
+  if(topTab==='home'){
+    if(homeView===null) renderModuleMap(panel);
+    else renderModuleDetail(panel, homeView.modIdx);
+    return;
+  }
+  if(topTab==='cards'){ renderCards(panel); return; }
+  if(topTab==='support'){ renderSupport(panel); return; }
+}
+
+function statusBadge(i){
+  const m = MODULES[i];
+  if(m.comingSoon) return `<span class="badge coming">${t('comingSoon')}</span>`;
+  if(!isModuleUnlocked(i)) return `<span class="badge locked">🔒 ${t('locked')}</span>`;
+  if(isModuleFullyDone(i)) return `<span class="badge done">✓ ${t('completed')}</span>`;
+  return `<span class="badge progress">${t('inProgress')}</span>`;
+}
+
+function renderModuleMap(panel){
+  let html = '';
+  const streak = currentStreak();
+  if(streak>=1) html += `<div class="streak-line">${t('streakLine')(streak)}</div>`;
+  if(lastModIdx!==null && MODULES[lastModIdx] && !MODULES[lastModIdx].comingSoon){
+    html += `<div class="continue-card" id="continueCard">
+      <div class="cc-label">${t('continueLabel')}</div>
+      <div class="cc-title">${MODULES[lastModIdx].title[lang]}</div>
+    </div>`;
+  }
+  const hasAnyRealModule = MODULES.some(m=>!m.comingSoon);
+  if(hasAnyRealModule){
+    html += `<div class="quick-card" id="quickReviewCard">
+      <div><div class="qc-title">${t('quickReviewTitle')}</div><div class="qc-sub">${t('quickReviewSub')}</div></div>
+    </div>`;
+  }
+  if(missed.length>0){
+    html += `<div class="missed-card" id="missedReviewCard">
+      <div><div class="qc-title">${t('missedReviewTitle')}</div><div class="qc-sub">${t('missedReviewSub')(missed.length)}</div></div>
+    </div>`;
+  }
+  html += `<p>${t('homeIntro')}</p><p class="hint">💡 ${t('glossaryHint')}</p>`;
+  for(let i=0;i<MODULES.length;i++){
+    const m = MODULES[i];
+    const unlocked = isModuleUnlocked(i);
+    const clickable = unlocked && !m.comingSoon;
+    let dateLine = '';
+    if(m.startDate){
+      const started = daysUntil(m.startDate) <= 0;
+      dateLine += `📅 ${started? t('startedOn') : t('startsOn')} ${formatDisplayDate(m.startDate)}`;
+      if(m.examDate){
+        const dLeft = daysUntil(m.examDate);
+        dateLine += ` &nbsp;·&nbsp; 📝 ${t('examOn')}: ${formatDisplayDate(m.examDate)}`;
+        if(dLeft === 0) dateLine += ` — <strong>${t('examToday')}</strong>`;
+        else if(dLeft > 0 && dLeft <= 14) dateLine += ` — <strong>${t('examInDays')(dLeft)}</strong>`;
+      }
+      const estMins = estimateStudyMinutes(m);
+      if(estMins) dateLine += `<div class="study-minutes">${t('estStudyTime')(estMins)}</div>`;
+    }
+    html += `<div class="module-card ${clickable?'clickable':''} ${!unlocked?'locked':''}" data-idx="${i}">
+      <div style="flex:1;">
+        <div class="mc-title"><span class="mc-seq">${i+1}.</span> ${m.title[lang]}</div>
+        ${dateLine ? `<div class="mc-date">${dateLine}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        ${statusBadge(i)}
+        ${m.startDate ? `<button class="small cal-btn" data-cal-idx="${i}">${t('addToCalendar')}</button>` : ''}
+      </div>
+    </div>`;
+    if(i>=1 && !MODULES[i].comingSoon){
+      const avail = isCumulativeAvailable(i);
+      const passed = isCumulativePassed(i);
+      const nextLocked = MODULES[i+1] && MODULES[i+1].comingSoon;
+      if(avail || passed){
+        // List is sorted by module number, not teaching order, so "Modules 1-N" would
+        // misstate which modules are actually built into this cumulative test. List the
+        // real (non-comingSoon) module numbers included instead.
+        const builtNums = MODULES.slice(0, i+1).filter(x=>!x.comingSoon).map(x=>x.num).join(' + ');
+        html += `<div class="cum-card" data-cum="${i}">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><strong>${t('cumulativeLabel')}</strong><div class="hint" style="margin:2px 0 0;">${builtNums}</div></div>
+            ${passed ? `<span class="badge done">✓ ${t('completed')}</span>` : `<span class="badge progress">${t('inProgress')}</span>`}
+          </div>
+        </div>`;
+      }
+    }
+  }
+  html += `<div class="donate-nudge" id="donateNudge" style="margin-top:18px; padding:12px 14px; border-radius:10px; background:var(--card-alt, rgba(250,204,21,0.1)); cursor:pointer; font-size:0.92rem;">${t('donateNudge')}</div>`;
+  panel.innerHTML = html;
+  const donateNudge = document.getElementById('donateNudge');
+  if(donateNudge) donateNudge.onclick = ()=>{ topTab='support'; homeView=null; quizState=null; renderTopTabs(); renderPanel(); };
+  panel.querySelectorAll('.module-card.clickable').forEach(el=>{
+    el.onclick = ()=>{ homeView = {modIdx: parseInt(el.dataset.idx)}; renderPanel(); };
+  });
+  panel.querySelectorAll('.cal-btn').forEach(el=>{
+    el.onclick = (e)=>{ e.stopPropagation(); downloadModuleICS(MODULES[parseInt(el.dataset.calIdx)]); };
+  });
+  panel.querySelectorAll('.cum-card').forEach(el=>{
+    el.onclick = ()=>{
+      const i = parseInt(el.dataset.cum);
+      if(isCumulativePassed(i)) return;
+      startCumulativeTest(i);
+    };
+  });
+  const contCard = document.getElementById('continueCard');
+  if(contCard) contCard.onclick = ()=>{ homeView = {modIdx: lastModIdx}; renderPanel(); };
+  const quickCard = document.getElementById('quickReviewCard');
+  if(quickCard) quickCard.onclick = ()=> startQuiz({kind:'quick', bank: buildQuickReviewBank(10), threshold:70});
+  const missedCard = document.getElementById('missedReviewCard');
+  if(missedCard) missedCard.onclick = ()=> startQuiz({kind:'missed', bank: missed.map(x=>x.item), threshold:70});
+}
+
+function renderModuleDetail(panel, i){
+  const m = MODULES[i];
+  lastModIdx = i; localStorage.setItem('pr_last_mod', i);
+  const p = ensureProgress(m.id);
+  let detailDateLine = '';
+  if(m.startDate){
+    const started = daysUntil(m.startDate) <= 0;
+    detailDateLine += `📅 ${started? t('startedOn') : t('startsOn')} ${formatDisplayDate(m.startDate)}`;
+    if(m.examDate){
+      const dLeft = daysUntil(m.examDate);
+      detailDateLine += ` &nbsp;·&nbsp; 📝 ${t('examOn')}: ${formatDisplayDate(m.examDate)}`;
+      if(dLeft === 0) detailDateLine += ` — <strong>${t('examToday')}</strong>`;
+      else if(dLeft > 0 && dLeft <= 14) detailDateLine += ` — <strong>${t('examInDays')(dLeft)}</strong>`;
+    }
+    const estMinsDetail = estimateStudyMinutes(m);
+    if(estMinsDetail) detailDateLine += `<div class="study-minutes">${t('estStudyTime')(estMinsDetail)}</div>`;
+  }
+  let html = `<div class="breadcrumb" id="backToMap">${t('backToModules')}</div>
+    <h2><span class="mc-seq">${i+1}.</span> ${m.title[lang]}</h2>
+    ${detailDateLine ? `<div class="mc-date" style="margin:-6px 0 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span>${detailDateLine}</span>
+      <button class="small cal-btn" data-cal-idx="${i}">${t('addToCalendar')}</button>
+    </div>` : ''}
+    <div class="score-grid">`;
+  m.sections.forEach(s=>{
+    const sc = p.sec[s.key]||0;
+    const cls = sc===0?'pending':(sc>=85?'pass':'fail');
+    const label = sc===0? t('notStarted') : (sc>=85? t('passed') : t('tryAgainSection'));
+    html += `<div class="score-card" data-sec="${s.key}" style="cursor:pointer;">
+      <div class="pct ${cls}">${sc}%</div><div class="lbl">${s.label[lang]}</div><div class="lbl">${label}</div>
+    </div>`;
+  });
+  html += `</div>`;
+  // Open access: the module test is always available, no need to hit 85% on every section first.
+  // Wrapped in a bordered, colored "test-box" (like the cumulative-review card) so this button
+  // doesn't get lost on the page underneath the section score grid.
+  {
+    const testSc = p.testScore||0;
+    const cls = testSc===0?'pending':(p.testPassed?'pass':'fail');
+    const label = testSc===0? t('notStarted') : (p.testPassed? t('passed') : t('tryAgainTest'));
+    const btnLabel = testSc>0 ? `🔁 ${t('retakeBtn')}` : `📝 ${t('startTest')}`;
+    html += `<div class="test-box">
+      <h3>${t('moduleTestLabel')} <span class="hint">(${t('passThreshold')})</span></h3>
+      <div class="score-card" style="max-width:220px;margin-bottom:12px;background:transparent;"><div class="pct ${cls}">${testSc}%</div><div class="lbl">${label}</div></div>
+      <button class="test-btn" id="startModTestBtn">${btnLabel}</button>
+    </div>`;
+  }
+  panel.innerHTML = html;
+  document.getElementById('backToMap').onclick = ()=>{ homeView=null; renderPanel(); };
+  panel.querySelectorAll('.cal-btn').forEach(el=>{
+    el.onclick = (e)=>{ e.stopPropagation(); downloadModuleICS(MODULES[parseInt(el.dataset.calIdx)]); };
+  });
+  panel.querySelectorAll('.score-card[data-sec]').forEach(el=>{
+    el.onclick = ()=>{
+      const key = el.dataset.sec;
+      const section = m.sections.find(s=>s.key===key);
+      startQuiz({kind:'section', modIdx:i, sectionKey:key, bank:section.bank, threshold:85});
+    };
+  });
+  const testBtn = document.getElementById('startModTestBtn');
+  if(testBtn) testBtn.onclick = ()=> startQuiz({kind:'moduleTest', modIdx:i, bank:m.moduleTest, threshold:70});
+}
+
+function startQuiz(cfg){
+  // Shuffle the question order every time a quiz is started, so it's never
+  // the same sequence twice — shuffleArray returns a fresh array, so the
+  // module's original bank (reused across attempts) is left untouched.
+  quizState = { ...cfg, bank: shuffleArray(cfg.bank), idx:0, correctCount:0, answered:false, selected:null, records:[] };
+  renderQuizQuestion();
+}
+function startCumulativeTest(i){
+  quizState = { kind:'cumulative', modIdx:i, bank: shuffleArray(combinedTestBank(i)), threshold:70, idx:0, correctCount:0, answered:false, selected:null, records:[] };
+  renderQuizQuestion();
+}
+
+function showOptionDefinition(text){
+  const entries = Object.keys(GLOSSARY).map(k=>({key:k, pattern: GLOSSARY[k][lang].term}));
+  entries.sort((a,b)=> b.pattern.length - a.pattern.length);
+  const found = entries.find(e=> new RegExp('\\b'+escapeRegExp(e.pattern)+'\\b','i').test(text));
+  if(found){ openGlossary(found.key); return; }
+  document.getElementById('glossTermText').textContent = '';
+  document.getElementById('glossDefText').textContent = lang==='es' ? 'No hay una definición rápida para esta respuesta.' : 'No quick definition available for this answer.';
+  document.getElementById('glossaryOverlay').style.display = 'flex';
+}
+
+function renderQuizQuestion(){
+  stopSpeaking();
+  const panel = document.getElementById('panel');
+  const fullItem = quizState.bank[quizState.idx];
+  const itemType = fullItem.type || 'mc';
+  // Duolingo-style mixed format: matching questions get a completely different tap-to-pair
+  // UI, rendered by renderMatchQuestion. Multiple-choice and fill-in-the-blank share the same
+  // data shape ({q,opts,c,exp}) and grading code below — fill-in-the-blank just renders its
+  // options as word-bank chips instead of full-width stacked buttons.
+  if(itemType==='match'){ renderMatchQuestion(panel, fullItem); return; }
+  const item = fullItem[lang];
+  // The official module/cumulative test mimics a real exam: no auto-highlighted glossary
+  // terms (a neutral "?" gives lookup on demand instead), you can change your pick before
+  // submitting, and right/wrong isn't revealed until the full test is done.
+  const isOfficialTest = (quizState.kind==='moduleTest' || quizState.kind==='cumulative');
+  let optsHtml = '';
+  item.opts.forEach((opt,idx)=>{
+    if(isOfficialTest){
+      const selCls = quizState.selected===idx ? ' selected' : '';
+      optsHtml += `<button class="option${selCls}" data-i="${idx}">${opt} <span class="opt-def-btn" data-opt="${idx}" style="display:inline-block;margin-left:6px;padding:0 6px;border:1px solid currentColor;border-radius:50%;font-size:0.75rem;opacity:0.7;cursor:pointer;">?</span></button>`;
+    } else {
+      optsHtml += `<button class="option" data-i="${idx}">${annotate(opt)}</button>`;
+    }
+  });
+  const officialNextLabel = quizState.idx+1===quizState.bank.length ? t('finishBtn') : t('nextBtn');
+  const typeTag = itemType==='fillBlank' ? `<div class="type-tag">✏️ ${t('typeTagFill')}</div>` : '';
+  panel.innerHTML = `
+    <div class="q-count">${t('question')} ${quizState.idx+1} ${t('of')} ${quizState.bank.length}</div>
+    ${typeTag}
+    <div class="q-text">${annotate(item.q)}</div>
+    <button id="readAloudBtn" style="background:none;border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:4px 10px;font-size:0.78rem;margin-bottom:10px;cursor:pointer;">${t('readAloud')}</button>
+    <div id="optsWrap"${itemType==='fillBlank' ? ' class="chips"' : ''}>${optsHtml}</div>
+    ${isOfficialTest ? '' : `<div class="explain" id="explainBox">${annotate(item.exp)}</div>`}
+    <br>
+    <button class="primary" id="nextBtn" style="${isOfficialTest ? (quizState.selected===null?'opacity:0.5;':'') : 'display:none;'}">${isOfficialTest ? officialNextLabel : (quizState.idx+1===quizState.bank.length ? t('finishBtn') : t('nextBtn'))}</button>
+  `;
+  attachGlossaryHandlers(panel);
+  if(isOfficialTest){
+    panel.querySelectorAll('.opt-def-btn').forEach(el=>{
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        const idx = parseInt(this.dataset.opt);
+        showOptionDefinition(item.opts[idx]);
+      });
+    });
+  }
+  document.getElementById('readAloudBtn').onclick = ()=>{
+    const optLabels = ['A','B','C','D'];
+    const optsText = item.opts.map((o,idx)=> `${optLabels[idx]}. ${o}`).join('. ');
+    speak(item.q + '. ' + optsText);
+  };
+
+  if(isOfficialTest){
+    document.querySelectorAll('#optsWrap .option').forEach(btn=>{
+      btn.onclick = ()=>{
+        quizState.selected = parseInt(btn.dataset.i);
+        renderQuizQuestion();
+      };
+    });
+    document.getElementById('nextBtn').onclick = ()=>{
+      if(quizState.selected===null) return;
+      const chosen = quizState.selected; const correct = item.c;
+      quizState.records.push({ q:item.q, opts:item.opts, chosen, correct, exp:item.exp, right: chosen===correct, full: quizState.bank[quizState.idx] });
+      if(chosen===correct) quizState.correctCount++;
+      quizState.selected = null;
+      if(quizState.idx+1 < quizState.bank.length){ quizState.idx++; renderQuizQuestion(); }
+      else finishQuiz();
+    };
+    return;
+  }
+
+  document.querySelectorAll('#optsWrap .option').forEach(btn=>{
+    btn.onclick = ()=>{
+      if(quizState.answered) return;
+      quizState.answered = true;
+      const chosen = parseInt(btn.dataset.i); const correct = item.c;
+      document.querySelectorAll('#optsWrap .option').forEach((b2,i2)=>{
+        if(i2===correct){ b2.classList.add('correct'); b2.innerHTML = '✓ ' + b2.innerHTML; }
+        else if(i2===chosen){ b2.classList.add('incorrect'); b2.innerHTML = '✗ ' + b2.innerHTML; }
+      });
+      if(chosen===correct) quizState.correctCount++;
+      quizState.records.push({ q:item.q, opts:item.opts, chosen, correct, exp:item.exp, right: chosen===correct, full: quizState.bank[quizState.idx] });
+      document.getElementById('explainBox').classList.add('show');
+      document.getElementById('nextBtn').style.display = 'block';
+    };
+  });
+  document.getElementById('nextBtn').onclick = ()=>{
+    if(quizState.idx+1 < quizState.bank.length){ quizState.idx++; quizState.answered=false; renderQuizQuestion(); }
+    else finishQuiz();
+  };
+}
+
+// Duolingo-style tap-to-pair matching question. Data shape: fullItem.type==='match',
+// fullItem[lang] = { prompt, pairs:[{term,def}, ...], exp }. The pairs array's index IS the
+// answer key — pairs[i].term correctly matches pairs[i].def. Left/right columns are shuffled
+// independently for display; quizState.matchPick tracks in-progress taps and is reset whenever
+// a new question loads.
+function renderMatchQuestion(panel, fullItem){
+  const item = fullItem[lang];
+  if(!quizState.matchPick || quizState.matchPick.forIdx !== quizState.idx){
+    const leftOrder = shuffleArray(item.pairs.map((p,i)=>i));
+    const rightOrder = shuffleArray(item.pairs.map((p,i)=>i));
+    quizState.matchPick = { forIdx: quizState.idx, leftOrder, rightOrder, selectedLeft:null, paired:{}, done:false };
+  }
+  const ms = quizState.matchPick;
+  const leftHtml = ms.leftOrder.map(i=>{
+    let cls = 'match-btn';
+    if(ms.paired[i]!==undefined) cls += ' locked ' + (ms.paired[i]===i ? 'correct' : 'incorrect');
+    else if(ms.selectedLeft===i) cls += ' selected';
+    // Note: term/def text is deliberately NOT run through annotate() here — these buttons
+    // are often glossary words themselves (that's the whole point of a matching question),
+    // and a clickable glossary-popup span inside the button would intercept the tap-to-pair
+    // click instead of registering the pairing.
+    return `<button class="${cls}" data-side="left" data-i="${i}" ${ms.paired[i]!==undefined?'disabled':''}>${item.pairs[i].term}</button>`;
+  }).join('');
+  const rightHtml = ms.rightOrder.map(i=>{
+    const pairedLeft = Object.keys(ms.paired).find(l=>ms.paired[l]===i);
+    let cls = 'match-btn';
+    if(pairedLeft!==undefined) cls += ' locked ' + (parseInt(pairedLeft)===i ? 'correct' : 'incorrect');
+    return `<button class="${cls}" data-side="right" data-i="${i}" ${pairedLeft!==undefined?'disabled':''}>${item.pairs[i].def}</button>`;
+  }).join('');
+  panel.innerHTML = `
+    <div class="q-count">${t('question')} ${quizState.idx+1} ${t('of')} ${quizState.bank.length}</div>
+    <div class="type-tag">🔗 ${t('typeTagMatch')}</div>
+    <div class="q-text">${annotate(item.prompt)}</div>
+    <div class="match-hint">${t('matchHint')}</div>
+    <div class="match-cols">
+      <div class="match-col">${leftHtml}</div>
+      <div class="match-col">${rightHtml}</div>
+    </div>
+    ${ms.done ? `<div class="explain show">${annotate(item.exp)}</div><br>` : ''}
+    <button class="primary" id="nextBtn" style="${ms.done?'':'display:none;'}">${quizState.idx+1===quizState.bank.length ? t('finishBtn') : t('nextBtn')}</button>
+  `;
+  attachGlossaryHandlers(panel);
+  if(!ms.done){
+    panel.querySelectorAll('.match-btn[data-side="left"]').forEach(btn=>{
+      btn.onclick = ()=>{ ms.selectedLeft = parseInt(btn.dataset.i); renderQuizQuestion(); };
+    });
+    panel.querySelectorAll('.match-btn[data-side="right"]').forEach(btn=>{
+      btn.onclick = ()=>{
+        if(ms.selectedLeft===null) return;
+        ms.paired[ms.selectedLeft] = parseInt(btn.dataset.i);
+        ms.selectedLeft = null;
+        if(Object.keys(ms.paired).length === item.pairs.length){
+          ms.done = true;
+          const allRight = Object.keys(ms.paired).every(l=> ms.paired[l]===parseInt(l));
+          if(allRight) quizState.correctCount++;
+          quizState.records.push({ right: allRight, full: fullItem });
+        }
+        renderQuizQuestion();
+      };
+    });
+  }
+  if(ms.done){
+    document.getElementById('nextBtn').onclick = ()=>{
+      quizState.matchPick = null;
+      if(quizState.idx+1 < quizState.bank.length){ quizState.idx++; renderQuizQuestion(); }
+      else finishQuiz();
+    };
+  }
+}
+
+function finishQuiz(){
+  stopSpeaking();
+  const panel = document.getElementById('panel');
+  const pct = Math.round((quizState.correctCount / quizState.bank.length) * 100);
+  const threshold = quizState.threshold;
+  const passed = pct >= threshold;
+  // Missed-question tracking: wrong answers get added to the review list, right
+  // answers clear a question off it (however/wherever it gets answered right).
+  (quizState.records||[]).forEach(r=>{
+    if(!r.full) return;
+    if(r.right) removeMissed(r.full); else addMissed(r.full);
+  });
+  saveMissed();
+  if(quizState.kind==='section'){
+    const p = ensureProgress(MODULES[quizState.modIdx].id);
+    p.sec[quizState.sectionKey] = pct; saveProgress();
+  } else if(quizState.kind==='moduleTest'){
+    const p = ensureProgress(MODULES[quizState.modIdx].id);
+    p.testScore = pct; p.testPassed = passed; saveProgress();
+  } else if(quizState.kind==='cumulative'){
+    cumulative['after_'+MODULES[quizState.modIdx].id] = {score:pct, passed}; saveCumulative();
+  }
+  const failMsg = quizState.kind==='section' ? t('failMsgSection') : t('failMsgTest');
+  const passMsg = quizState.kind==='section' ? t('passMsgSection') : t('passMsgTest');
+  const isOfficialTest = (quizState.kind==='moduleTest' || quizState.kind==='cumulative');
+  let reviewHtml = '';
+  if(isOfficialTest && quizState.records && quizState.records.length){
+    reviewHtml = `<h3>${t('reviewLabel')}</h3>` + quizState.records.map((r,i)=>{
+      const yourOpt = r.opts[r.chosen];
+      const correctOpt = r.opts[r.correct];
+      return `<div class="review-item">
+        <div class="rq">${i+1}. ${annotate(r.q)}</div>
+        <div class="ra ${r.right?'right':'wrong'}">${t('yourAnswer')}: ${yourOpt} ${r.right?'✓':'✗'}</div>
+        ${r.right ? '' : `<div class="ra right">${t('correctAnswer')}: ${correctOpt}</div>`}
+        <div class="rexp">${annotate(r.exp)}</div>
+      </div>`;
+    }).join('');
+  }
+  panel.innerHTML = `
+    <div class="result-big">
+      <div class="result-pct ${passed?'pass':'fail'}">${pct}%</div>
+      <div class="result-msg">${t('yourScore')}: ${quizState.correctCount}/${quizState.bank.length}</div>
+      <div class="result-msg">${passed ? passMsg : failMsg}</div>
+      <div class="result-msg" style="margin-top:8px; font-weight:600;">${t('retakeEncourage')}</div>
+      ${!passed ? `<div class="result-msg" style="margin-top:6px; color:var(--muted); font-size:0.88rem;">${t('retakeTips')}</div>` : ''}
+      ${passed ? `<div class="donate-nudge" id="resultDonateNudge" style="margin-top:12px; padding:10px 14px; border-radius:10px; background:var(--card-alt, rgba(250,204,21,0.1)); cursor:pointer; font-size:0.88rem; text-align:left;">${t('donateNudge')}</div>` : ''}
+    </div>
+    <button class="primary" id="retakeQBtn">${t('retakeBtn')}</button><br><br>
+    <button class="primary" id="backQBtn" style="background:#475569;">${t('backHome')}</button>
+    ${reviewHtml ? `<br><br>${reviewHtml}` : ''}
+  `;
+  if(reviewHtml) attachGlossaryHandlers(panel);
+  const resultDonateNudge = document.getElementById('resultDonateNudge');
+  if(resultDonateNudge) resultDonateNudge.onclick = ()=>{ topTab='support'; homeView=null; quizState=null; renderTopTabs(); renderPanel(); };
+  document.getElementById('retakeQBtn').onclick = ()=>{
+    if(quizState.kind==='cumulative') startCumulativeTest(quizState.modIdx);
+    else if(quizState.kind==='quick') startQuiz({kind:'quick', bank: buildQuickReviewBank(10), threshold:70});
+    else if(quizState.kind==='missed'){
+      if(missed.length===0){ quizState=null; renderPanel(); return; }
+      startQuiz({kind:'missed', bank: missed.map(x=>x.item), threshold:70});
+    }
+    else startQuiz(quizState);
+  };
+  document.getElementById('backQBtn').onclick = ()=>{
+    // "Home" always means the actual home screen (module map), not just
+    // back to the module detail page — regardless of what kind of quiz this was.
+    homeView = null; topTab = 'home'; quizState = null; renderTopTabs(); renderPanel();
+  };
+}
+
+function renderCards(panel){
+  const unlockedModules = MODULES.map((m,i)=>({m,i})).filter(x=> !x.m.comingSoon && isModuleUnlocked(x.i));
+  if(cardState.modIdx===null || !unlockedModules.find(x=>x.i===cardState.modIdx)) cardState.modIdx = unlockedModules[0]?.i ?? 0;
+  const mod = MODULES[cardState.modIdx];
+  const deck = mod.cards || [];
+  if(cardState.idx >= deck.length) cardState.idx = 0;
+  const card = deck[cardState.idx] ? deck[cardState.idx][lang] : {q:'',a:''};
+  let options = unlockedModules.map(x=>`<option value="${x.i}" ${x.i===cardState.modIdx?'selected':''}>${x.m.title[lang]}</option>`).join('');
+  panel.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <select id="modFilter">${options}</select>
+      <button id="shuffleCardsBtn">${t('shuffleBtn')}</button>
+    </div>
+    <div style="text-align:center; font-size:0.8rem; color:var(--muted); margin-bottom:8px;">${deck.length? (cardState.idx+1)+' / '+deck.length : ''}</div>
+    <div class="scene">
+      <div class="card" id="flashCard">
+        <div class="face front"><div class="tag">${lang==='en'?'Question':'Pregunta'}</div><div>${annotate(card.q||'')}</div><div style="margin-top:10px;font-size:0.75rem;color:var(--muted);">${t('flipHint')}</div></div>
+        <div class="face back"><div class="tag">${lang==='en'?'Answer':'Respuesta'}</div><div style="font-weight:500;font-size:0.95rem;">${annotate(card.a||'')}</div><div style="margin-top:10px;font-size:0.75rem;color:var(--muted);">${t('flipBackHint')}</div></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-bottom:8px;">
+      <button id="readAloudCardBtn" style="background:none;border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:4px 10px;font-size:0.78rem;cursor:pointer;">${t('readAloud')}</button>
+    </div>
+    <div class="nav">
+      <button id="prevCardBtn">${t('prevBtn')}</button>
+      <button id="flipCardBtn">${t('flipBtn')}</button>
+      <button id="nextCardBtn2">${t('nextCardBtn')}</button>
+    </div>
+  `;
+  attachGlossaryHandlers(panel);
+  document.getElementById('readAloudCardBtn').onclick = ()=>{
+    const showingBack = document.getElementById('flashCard').classList.contains('flipped');
+    speak(showingBack ? (card.a||'') : (card.q||''));
+  };
+  document.getElementById('modFilter').onchange = (e)=>{ cardState.modIdx = parseInt(e.target.value); cardState.idx=0; renderCards(panel); };
+  document.getElementById('flashCard').onclick = ()=> document.getElementById('flashCard').classList.toggle('flipped');
+  document.getElementById('flipCardBtn').onclick = ()=> document.getElementById('flashCard').classList.toggle('flipped');
+  document.getElementById('nextCardBtn2').onclick = ()=>{ if(deck.length){ cardState.idx=(cardState.idx+1)%deck.length; renderCards(panel);} };
+  document.getElementById('prevCardBtn').onclick = ()=>{ if(deck.length){ cardState.idx=(cardState.idx-1+deck.length)%deck.length; renderCards(panel);} };
+  document.getElementById('shuffleCardsBtn').onclick = ()=>{
+    for(let a=deck.length-1;a>0;a--){ const b=Math.floor(Math.random()*(a+1)); [deck[a],deck[b]]=[deck[b],deck[a]]; }
+    cardState.idx=0; renderCards(panel);
+  };
+}
+
+function renderSupport(panel){
+  panel.innerHTML = `
+    <p>${t('supportIntro')}</p>
+    <p>${t('supportIntro2')}</p>
+    <div class="tip-box">
+      <h3>${t('supportHeading')}</h3>
+      <div class="tip-row"><span>${t('cashapp')}</span><span style="font-weight:700;">$AgentKodak</span></div>
+      <div class="tip-row"><span>${t('zelle')}</span><span style="font-weight:700;">(571) 331-5770</span></div>
+    </div>
+    <button class="small" id="changeStudyTimeBtn" style="margin-top:16px;background:transparent;border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;">${t('changeStudyTime')}</button>
+  `;
+  document.getElementById('changeStudyTimeBtn').onclick = ()=> openStudyPrefModal(null);
+}
+
+/* ============ INIT ============ */
+document.getElementById('btnEN').onclick = ()=> setLang('en');
+document.getElementById('btnES').onclick = ()=> setLang('es');
+document.getElementById('glossCloseBtn').onclick = ()=> closeGlossary();
+document.getElementById('glossaryOverlay').addEventListener('click', function(e){ if(e.target===this) closeGlossary(); });
+document.getElementById('studyPrefOverlay').addEventListener('click', function(e){ if(e.target===this) this.style.display='none'; });
+
+document.getElementById('btnTextSize').onclick = ()=>{ textScale = (textScale+1)%TEXT_SCALES.length; applyTextScale(); };
+document.getElementById('btnTheme').onclick = ()=>{ theme = theme==='light' ? 'dark' : 'light'; applyTheme(); };
+document.getElementById('btnGoHome').onclick = ()=>{
+  // Always-visible "go home" button — works from ANY screen (module map, module
+  // detail, mid-quiz, flashcards, support tab, or the post-quiz review screen).
+  homeView = null; topTab = 'home'; quizState = null; renderTopTabs(); renderPanel();
+};
+applyTextScale();
+applyTheme();
+
+function showOnboarding(){
+  document.getElementById('onboardTitle').textContent = t('onboardTitle');
+  document.getElementById('onboardBody').textContent = t('onboardBody');
+  document.getElementById('onboardCloseBtn').textContent = t('onboardClose');
+  document.getElementById('onboardingOverlay').style.display = 'flex';
+}
+document.getElementById('onboardCloseBtn').onclick = ()=>{
+  document.getElementById('onboardingOverlay').style.display = 'none';
+  localStorage.setItem('pr_onboarded', '1');
+};
+document.getElementById('onboardingOverlay').addEventListener('click', function(e){
+  if(e.target===this){ this.style.display='none'; localStorage.setItem('pr_onboarded','1'); }
+});
+
+setLang(lang);
+if(!localStorage.getItem('pr_onboarded')) showOnboarding();
+</script>
+</body>
+</html>
