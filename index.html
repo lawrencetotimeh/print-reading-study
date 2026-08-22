@@ -143,6 +143,9 @@
   .match-btn.locked{ cursor:default; opacity:0.75; }
   .match-btn.correct{ background:#bbf7d0; border:2px solid #15803d; color:#14532d; font-weight:700; }
   .match-btn.incorrect{ background:#fecaca; border:2px solid #b91c1c; color:#7f1d1d; font-weight:700; }
+  .match-btn.flash-wrong{ animation: matchShake 0.35s; background:#fecaca; border:2px solid #b91c1c; }
+  @keyframes matchShake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  .match-tries{ font-size:0.78rem; color:var(--muted); margin-top:4px; }
   .match-hint{ font-size:0.78rem; color:var(--muted); margin-bottom:8px; }
 </style>
 </head>
@@ -200,7 +203,7 @@
 const T = {
   en:{
     subtitle:"Printreading for Residential and Light Commercial Construction — free study tool, one week at a time",
-    tabHome:"Weeks", tabCards:"Flashcards", tabSupport:"Support",
+    tabHome:"Weeks", tabCards:"Flashcards", tabSupport:"💰 Tip Jar",
     homeIntro:"Every week and week test is open, jump to whatever you need to study. These aren't official grades, just a personal goal: aim for 80%+ on sections and week tests before you move on. There's a Cumulative Review after Week 2 covering everything so far.",
     glossaryHint:"Tip: any underlined word is tappable, tap it for a quick definition without losing your place.",
     locked:"Locked", unlocked:"Unlocked", completed:"Completed", comingSoon:"Coming soon", inProgress:"In progress",
@@ -218,6 +221,8 @@ const T = {
     retakeBtn:"Retake", backHome:"🏠 Home",
     typeTagFill:"Fill in the blank", typeTagMatch:"Matching",
     matchHint:"Tap a term on the left, then tap its match on the right.",
+    matchTriesLeft:"tries left on this pair", matchTryAgain:"Not a match — try again.",
+    matchOutOfTries:"Out of tries — here's the correct match.",
     moduleTestLockedMsg:"Score 80%+ on all sections in this week to unlock its test.",
     moduleTestLabel:"Week Test", startTest:"Start week test", passThreshold:"Goal: 80%+",
     sectionThreshold:"Goal: 80%+",
@@ -268,7 +273,7 @@ const T = {
   },
   es:{
     subtitle:"Lectura de Planos para Construcción Residencial y Comercial Ligera — herramienta gratuita de estudio, semana a semana",
-    tabHome:"Semanas", tabCards:"Tarjetas", tabSupport:"Apoyar",
+    tabHome:"Semanas", tabCards:"Tarjetas", tabSupport:"💰 Propina",
     homeIntro:"Todas las semanas y sus exámenes están abiertos, pasa a lo que necesites estudiar. Esto no son calificaciones oficiales, solo una meta personal: apunta a 80%+ en las secciones y exámenes de semana antes de avanzar. Hay un Repaso Acumulativo después de la Semana 2 que cubre todo lo visto hasta ahora.",
     glossaryHint:"Consejo: cualquier palabra subrayada se puede tocar para ver una definición rápida sin perder tu lugar.",
     locked:"Bloqueado", unlocked:"Desbloqueado", completed:"Completado", comingSoon:"Próximamente", inProgress:"En progreso",
@@ -286,6 +291,8 @@ const T = {
     retakeBtn:"Repetir", backHome:"🏠 Inicio",
     typeTagFill:"Completa el espacio", typeTagMatch:"Relacionar",
     matchHint:"Toca un término a la izquierda y luego su pareja a la derecha.",
+    matchTriesLeft:"intentos restantes en este par", matchTryAgain:"No es correcto — intenta de nuevo.",
+    matchOutOfTries:"Se acabaron los intentos — aquí está la pareja correcta.",
     moduleTestLockedMsg:"Obtén 80%+ en todas las secciones de esta semana para desbloquear su examen.",
     moduleTestLabel:"Examen de la Semana", startTest:"Comenzar examen de la semana", passThreshold:"Meta: 80%+",
     sectionThreshold:"Meta: 80%+",
@@ -1392,7 +1399,7 @@ function renderQuizQuestion(){
     <div class="q-text">${annotate(item.q)}</div>
     <button id="readAloudBtn" style="background:none;border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:4px 10px;font-size:0.78rem;margin-bottom:10px;cursor:pointer;">${t('readAloud')}</button>
     <div id="optsWrap"${itemType==='fillBlank' ? ' class="chips"' : ''}>${optsHtml}</div>
-    ${isOfficialTest ? '' : `<div class="explain" id="explainBox">${annotate(item.exp)}</div>`}
+    ${isOfficialTest ? '' : `<div class="explain" id="explainBox">${annotate(item.exp)}<br><button id="readExplainBtn" style="background:none;border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:3px 9px;font-size:0.76rem;margin-top:8px;cursor:pointer;">${t('readAloud')}</button></div>`}
     <br>
     <button class="primary" id="nextBtn" style="${isOfficialTest ? (quizState.selected===null?'opacity:0.5;':'') : 'display:none;'}">${isOfficialTest ? officialNextLabel : (quizState.idx+1===quizState.bank.length ? t('finishBtn') : t('nextBtn'))}</button>
   `;
@@ -1411,6 +1418,8 @@ function renderQuizQuestion(){
     const optsText = item.opts.map((o,idx)=> `${optLabels[idx]}. ${o}`).join('. ');
     speak(item.q + '. ' + optsText);
   };
+  const readExplainBtn = document.getElementById('readExplainBtn');
+  if(readExplainBtn) readExplainBtn.onclick = (e)=>{ e.stopPropagation(); speak(item.exp); };
 
   if(isOfficialTest){
     document.querySelectorAll('#optsWrap .option').forEach(btn=>{
@@ -1457,30 +1466,47 @@ function renderQuizQuestion(){
 // answer key — pairs[i].term correctly matches pairs[i].def. Left/right columns are shuffled
 // independently for display; quizState.matchPick tracks in-progress taps and is reset whenever
 // a new question loads.
+const MATCH_MAX_TRIES = 4;
 function renderMatchQuestion(panel, fullItem){
   const item = fullItem[lang];
   if(!quizState.matchPick || quizState.matchPick.forIdx !== quizState.idx){
     const leftOrder = shuffleArray(item.pairs.map((p,i)=>i));
     const rightOrder = shuffleArray(item.pairs.map((p,i)=>i));
-    quizState.matchPick = { forIdx: quizState.idx, leftOrder, rightOrder, selectedLeft:null, paired:{}, done:false };
+    // paired: left-index -> resolved (either genuinely matched, or revealed after running
+    // out of tries — either way pairing is always left===right since a "pair" only resolves
+    // once the correct match is made or given up on).
+    // pairScore: left-index -> 1 (got it first try), 0.5 (got it after a retry), 0 (revealed after 4 misses)
+    // attempts: left-index -> number of wrong taps so far on that term
+    quizState.matchPick = { forIdx: quizState.idx, leftOrder, rightOrder, selectedLeft:null, paired:{}, pairScore:{}, attempts:{}, flash:null, done:false };
   }
   const ms = quizState.matchPick;
   const leftHtml = ms.leftOrder.map(i=>{
     let cls = 'match-btn';
-    if(ms.paired[i]!==undefined) cls += ' locked ' + (ms.paired[i]===i ? 'correct' : 'incorrect');
+    const resolved = ms.paired[i]!==undefined;
+    if(resolved) cls += ' locked ' + (ms.pairScore[i]>0 ? 'correct' : 'incorrect');
     else if(ms.selectedLeft===i) cls += ' selected';
+    if(ms.flash && ms.flash.left===i) cls += ' flash-wrong';
     // Note: term/def text is deliberately NOT run through annotate() here — these buttons
     // are often glossary words themselves (that's the whole point of a matching question),
     // and a clickable glossary-popup span inside the button would intercept the tap-to-pair
     // click instead of registering the pairing.
-    return `<button class="${cls}" data-side="left" data-i="${i}" ${ms.paired[i]!==undefined?'disabled':''}>${item.pairs[i].term}</button>`;
+    return `<button class="${cls}" data-side="left" data-i="${i}" ${resolved?'disabled':''}>${item.pairs[i].term}</button>`;
   }).join('');
   const rightHtml = ms.rightOrder.map(i=>{
-    const pairedLeft = Object.keys(ms.paired).find(l=>ms.paired[l]===i);
     let cls = 'match-btn';
-    if(pairedLeft!==undefined) cls += ' locked ' + (parseInt(pairedLeft)===i ? 'correct' : 'incorrect');
-    return `<button class="${cls}" data-side="right" data-i="${i}" ${pairedLeft!==undefined?'disabled':''}>${item.pairs[i].def}</button>`;
+    const resolved = ms.paired[i]!==undefined;
+    if(resolved) cls += ' locked ' + (ms.pairScore[i]>0 ? 'correct' : 'incorrect');
+    if(ms.flash && ms.flash.right===i) cls += ' flash-wrong';
+    return `<button class="${cls}" data-side="right" data-i="${i}" ${resolved?'disabled':''}>${item.pairs[i].def}</button>`;
   }).join('');
+  let triesMsg = '';
+  if(ms.flash){
+    const left = ms.flash.left;
+    const triesLeft = MATCH_MAX_TRIES - (ms.attempts[left]||0);
+    triesMsg = `<div class="match-tries">${t('matchTryAgain')} (${triesLeft} ${t('matchTriesLeft')})</div>`;
+  } else if(ms.justRevealed!==null && ms.justRevealed!==undefined){
+    triesMsg = `<div class="match-tries">${t('matchOutOfTries')}</div>`;
+  }
   panel.innerHTML = `
     <div class="q-count">${t('question')} ${quizState.idx+1} ${t('of')} ${quizState.bank.length}</div>
     <div class="type-tag">🔗 ${t('typeTagMatch')}</div>
@@ -1490,30 +1516,62 @@ function renderMatchQuestion(panel, fullItem){
       <div class="match-col">${leftHtml}</div>
       <div class="match-col">${rightHtml}</div>
     </div>
-    ${ms.done ? `<div class="explain show">${annotate(item.exp)}</div><br>` : ''}
+    ${triesMsg}
+    ${ms.done ? `<div class="explain show">${annotate(item.exp)}<br><button id="readMatchExplainBtn" style="background:none;border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:3px 9px;font-size:0.76rem;margin-top:8px;cursor:pointer;">${t('readAloud')}</button></div><br>` : ''}
     <button class="primary" id="nextBtn" style="${ms.done?'':'display:none;'}">${quizState.idx+1===quizState.bank.length ? t('finishBtn') : t('nextBtn')}</button>
   `;
   attachGlossaryHandlers(panel);
   if(!ms.done){
     panel.querySelectorAll('.match-btn[data-side="left"]').forEach(btn=>{
-      btn.onclick = ()=>{ ms.selectedLeft = parseInt(btn.dataset.i); renderQuizQuestion(); };
+      btn.onclick = ()=>{
+        if(ms.flash) return; // ignore taps mid-flash animation
+        ms.selectedLeft = parseInt(btn.dataset.i); renderQuizQuestion();
+      };
     });
     panel.querySelectorAll('.match-btn[data-side="right"]').forEach(btn=>{
       btn.onclick = ()=>{
-        if(ms.selectedLeft===null) return;
-        ms.paired[ms.selectedLeft] = parseInt(btn.dataset.i);
-        ms.selectedLeft = null;
-        if(Object.keys(ms.paired).length === item.pairs.length){
-          ms.done = true;
-          const allRight = Object.keys(ms.paired).every(l=> ms.paired[l]===parseInt(l));
-          if(allRight) quizState.correctCount++;
-          quizState.records.push({ right: allRight, full: fullItem });
+        if(ms.selectedLeft===null || ms.flash) return;
+        const L = ms.selectedLeft;
+        const R = parseInt(btn.dataset.i);
+        ms.justRevealed = null;
+        if(R === L){
+          ms.paired[L] = L;
+          ms.pairScore[L] = (ms.attempts[L]||0) === 0 ? 1 : 0.5;
+          ms.selectedLeft = null;
+          maybeFinishMatch();
+          renderQuizQuestion();
+        } else {
+          ms.attempts[L] = (ms.attempts[L]||0) + 1;
+          ms.selectedLeft = null;
+          if(ms.attempts[L] >= MATCH_MAX_TRIES){
+            ms.paired[L] = L; // reveal the correct pairing — out of tries
+            ms.pairScore[L] = 0;
+            ms.justRevealed = L;
+            maybeFinishMatch();
+            renderQuizQuestion();
+          } else {
+            ms.flash = { left: L, right: R };
+            renderQuizQuestion();
+            setTimeout(()=>{
+              if(quizState && quizState.matchPick === ms){ ms.flash = null; renderQuizQuestion(); }
+            }, 450);
+          }
         }
-        renderQuizQuestion();
       };
     });
   }
+  function maybeFinishMatch(){
+    if(Object.keys(ms.paired).length === item.pairs.length){
+      ms.done = true;
+      const scores = Object.values(ms.pairScore);
+      const matchScore = scores.reduce((a,b)=>a+b,0) / item.pairs.length;
+      quizState.correctCount += matchScore;
+      quizState.records.push({ right: matchScore===1, full: fullItem, matchScore });
+    }
+  }
   if(ms.done){
+    const readMatchExplainBtn = document.getElementById('readMatchExplainBtn');
+    if(readMatchExplainBtn) readMatchExplainBtn.onclick = (e)=>{ e.stopPropagation(); speak(item.exp); };
     document.getElementById('nextBtn').onclick = ()=>{
       quizState.matchPick = null;
       if(quizState.idx+1 < quizState.bank.length){ quizState.idx++; renderQuizQuestion(); }
@@ -1557,6 +1615,7 @@ function finishQuiz(){
         <div class="ra ${r.right?'right':'wrong'}">${t('yourAnswer')}: ${yourOpt} ${r.right?'✓':'✗'}</div>
         ${r.right ? '' : `<div class="ra right">${t('correctAnswer')}: ${correctOpt}</div>`}
         <div class="rexp">${annotate(r.exp)}</div>
+        <button class="review-read-btn" data-ridx="${i}" style="background:none;border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:3px 9px;font-size:0.76rem;margin-top:6px;cursor:pointer;">${t('readAloud')}</button>
       </div>`;
     }).join('');
   }
@@ -1573,7 +1632,15 @@ function finishQuiz(){
     <button class="primary" id="backQBtn" style="background:#475569;">${t('backHome')}</button>
     ${reviewHtml ? `<br><br>${reviewHtml}` : ''}
   `;
-  if(reviewHtml) attachGlossaryHandlers(panel);
+  if(reviewHtml){
+    attachGlossaryHandlers(panel);
+    panel.querySelectorAll('.review-read-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        const r = quizState.records[parseInt(btn.dataset.ridx)];
+        if(r) speak(r.exp);
+      };
+    });
+  }
   const resultDonateNudge = document.getElementById('resultDonateNudge');
   if(resultDonateNudge) resultDonateNudge.onclick = ()=>{ topTab='support'; homeView=null; quizState=null; renderTopTabs(); renderPanel(); };
   document.getElementById('retakeQBtn').onclick = ()=>{
