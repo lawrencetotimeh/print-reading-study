@@ -218,7 +218,7 @@ const T = {
     failMsgTest:"Not quite at 80% yet, and that's okay — this is for learning, not judging.",
     retakeEncourage:"Take it again as many times as you need. The real goal is understanding this chapter, not just clearing a number.",
     retakeTips:"To do better next time: read every explanation below closely (especially for the questions you missed), tap any underlined word for a quick definition, and don't guess — if a question stumps you, that's exactly the thing to go re-read in the textbook before you retake it.",
-    retakeBtn:"Retake", backHome:"🏠 Home",
+    retakeBtn:"Retake", backHome:"🏠 Home", continueToLabel:"Continue to",
     typeTagFill:"Fill in the blank", typeTagMatch:"Matching",
     matchHint:"Tap a term on the left, then tap its match on the right.",
     matchTriesLeft:"tries left on this pair", matchTryAgain:"Not a match — try again.",
@@ -288,7 +288,7 @@ const T = {
     failMsgTest:"Todavía no llegas al 80%, y está bien — esto es para aprender, no para juzgarte.",
     retakeEncourage:"Repítelo las veces que necesites. La meta real es entender este capítulo, no solo pasar un número.",
     retakeTips:"Para mejorar la próxima vez: lee con cuidado cada explicación de abajo (sobre todo en las que fallaste), toca cualquier palabra subrayada para ver su definición, y no adivines. Si una pregunta te cuesta, eso es justo lo que debes releer en el libro antes de repetir el examen.",
-    retakeBtn:"Repetir", backHome:"🏠 Inicio",
+    retakeBtn:"Repetir", backHome:"🏠 Inicio", continueToLabel:"Continuar a",
     typeTagFill:"Completa el espacio", typeTagMatch:"Relacionar",
     matchHint:"Toca un término a la izquierda y luego su pareja a la derecha.",
     matchTriesLeft:"intentos restantes en este par", matchTryAgain:"No es correcto — intenta de nuevo.",
@@ -1580,6 +1580,43 @@ function renderMatchQuestion(panel, fullItem){
   }
 }
 
+// Figures out what the "next part" is after a quiz result, so the results
+// screen can offer a one-tap path forward instead of just Retake/Home.
+// section -> next section in the same week, or the week test if that was the
+// last section. moduleTest/cumulative -> first section of the next week, if
+// one exists and has content. Returns null when there's nothing sensible to
+// jump to (quick review, missed review, or end of the built-out weeks).
+function getNextStep(qs){
+  if(qs.kind==='section'){
+    const m = MODULES[qs.modIdx];
+    const idx = m.sections.findIndex(s=>s.key===qs.sectionKey);
+    if(idx>=0 && idx < m.sections.length-1){
+      const ns = m.sections[idx+1];
+      return {
+        label: `${t('continueToLabel')} ${ns.label[lang]} →`,
+        run: ()=> startQuiz({kind:'section', modIdx:qs.modIdx, sectionKey:ns.key, bank:ns.bank, threshold:85})
+      };
+    }
+    return {
+      label: `${t('continueToLabel')} ${t('moduleTestLabel')} →`,
+      run: ()=> startQuiz({kind:'moduleTest', modIdx:qs.modIdx, bank:m.moduleTest, threshold:70})
+    };
+  }
+  if(qs.kind==='moduleTest' || qs.kind==='cumulative'){
+    const nextIdx = qs.modIdx+1;
+    const nm = MODULES[nextIdx];
+    if(nm && isModuleUnlocked(nextIdx) && nm.sections && nm.sections.length){
+      const fs = nm.sections[0];
+      return {
+        label: `${t('continueToLabel')} ${nm.title[lang]} →`,
+        run: ()=> startQuiz({kind:'section', modIdx:nextIdx, sectionKey:fs.key, bank:fs.bank, threshold:85})
+      };
+    }
+    return null;
+  }
+  return null;
+}
+
 function finishQuiz(){
   stopSpeaking();
   const panel = document.getElementById('panel');
@@ -1619,6 +1656,7 @@ function finishQuiz(){
       </div>`;
     }).join('');
   }
+  const nextStep = getNextStep(quizState);
   panel.innerHTML = `
     <div class="result-big">
       <div class="result-pct ${passed?'pass':'fail'}">${pct}%</div>
@@ -1629,6 +1667,7 @@ function finishQuiz(){
       ${passed ? `<div class="donate-nudge" id="resultDonateNudge" style="margin-top:12px; padding:10px 14px; border-radius:10px; background:var(--card-alt, rgba(250,204,21,0.1)); cursor:pointer; font-size:0.88rem; text-align:left;">${t('donateNudge')}</div>` : ''}
     </div>
     <button class="primary" id="retakeQBtn">${t('retakeBtn')}</button><br><br>
+    ${nextStep ? `<button class="primary" id="nextPartBtn" style="background:#16a34a;">${nextStep.label}</button><br><br>` : ''}
     <button class="primary" id="backQBtn" style="background:#475569;">${t('backHome')}</button>
     ${reviewHtml ? `<br><br>${reviewHtml}` : ''}
   `;
@@ -1652,6 +1691,8 @@ function finishQuiz(){
     }
     else startQuiz(quizState);
   };
+  const nextPartBtn = document.getElementById('nextPartBtn');
+  if(nextPartBtn) nextPartBtn.onclick = ()=> nextStep.run();
   document.getElementById('backQBtn').onclick = ()=>{
     // "Home" always means the actual home screen (module map), not just
     // back to the module detail page — regardless of what kind of quiz this was.
