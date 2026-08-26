@@ -401,7 +401,18 @@ const GLOSSARY = {
   stairRatio:{en:{term:"stair ratio",def:"The relationship between riser height (R) and tread width (T) in a stairway, per formulas like T+R = 17\" to 18\"."},es:{term:"relación de escalera",def:"La relación entre la altura de contrahuella (R) y el ancho de huella (T) en una escalera."}},
   totalRise:{en:{term:"total rise",def:"The vertical distance from the surface of the lower floor to the surface of the floor above in a stairway."},es:{term:"altura total (total rise)",def:"La distancia vertical desde la superficie del piso inferior hasta la superficie del piso superior en una escalera."}},
   totalRun:{en:{term:"total run",def:"The horizontal distance from the face of the bottom riser to the face of the top riser in a stairway."},es:{term:"longitud total (total run)",def:"La distancia horizontal desde la cara de la contrahuella inferior hasta la cara de la contrahuella superior."}},
-  handrail:{en:{term:"handrail",def:"A rail required on stairways with two or more risers, with height, projection, and cross-section dimensions set by building code."},es:{term:"pasamanos",def:"Un riel requerido en escaleras con dos o más contrahuellas, con dimensiones de altura y proyección establecidas por el código de construcción."}}
+  handrail:{en:{term:"handrail",def:"A rail required on stairways with two or more risers, with height, projection, and cross-section dimensions set by building code."},es:{term:"pasamanos",def:"Un riel requerido en escaleras con dos o más contrahuellas, con dimensiones de altura y proyección establecidas por el código de construcción."}},
+  riser:{en:{term:"riser",def:"The vertical face of a single step in a stairway."},es:{term:"contrahuella (riser)",def:"La cara vertical de un solo escalón en una escalera."}},
+  tread:{en:{term:"tread",def:"The horizontal surface of a single step in a stairway — the part you step on."},es:{term:"huella (tread)",def:"La superficie horizontal de un solo escalón en una escalera — la parte donde se pisa."}},
+  headroom:{en:{term:"headroom",def:"The vertical clearance on a stairway, measured from a line connecting the tread nosings up to the ceiling or structure above."},es:{term:"espacio libre (headroom)",def:"El espacio vertical libre en una escalera, medido desde una línea que conecta las narices de las huellas hasta el techo o la estructura de arriba."}},
+  stairAngle:{en:{term:"stair angle",def:"The angle a stairway's stringer makes with the horizontal floor — steeper stairs have a larger stair angle."},es:{term:"ángulo de escalera",def:"El ángulo que forma el larguero de una escalera con el piso horizontal — las escaleras más empinadas tienen un ángulo mayor."}},
+  finishedFloor:{en:{term:"finished floor",def:"The completed floor surface level at the top or bottom of a stairway, after all flooring material is installed."},es:{term:"piso terminado (finished floor)",def:"El nivel de la superficie del piso terminado en la parte superior o inferior de una escalera, después de instalar el material de piso."}},
+  circularStairway:{en:{term:"circular stairway",def:"A curved stairway built from pie-shaped winders instead of straight treads, often designated by a winder count, such as '14 WINDERS UP.'"},es:{term:"escalera circular",def:"Una escalera curva construida con peldaños en forma de abanico en lugar de huellas rectas."}},
+  landingStairway:{en:{term:"straight-run stairway with landing",def:"A straight stairway broken partway up by a flat landing, then continuing as a second straight flight — shown on plans as two 'R UP' runs with a landing between them."},es:{term:"escalera recta con descanso",def:"Una escalera recta interrumpida por un descanso plano, y que continúa como un segundo tramo recto."}},
+  sectionLine:{en:{term:"section line",def:"Diagonal hatching that fills a cut surface on a section drawing, showing the material that was sectioned — also called hatching."},es:{term:"línea de sección",def:"Un patrón de líneas diagonales (achurado) que llena una superficie cortada en una sección, mostrando el material seccionado."}},
+  longBreakLine:{en:{term:"long break line",def:"A long, continuous wavy freehand line used to shorten the drawn view of a long, flat member without changing its actual dimension."},es:{term:"línea de ruptura larga",def:"Una línea larga, continua y ondulada a mano alzada, usada para acortar la vista dibujada de un miembro largo y plano."}},
+  shortBreakLine:{en:{term:"short break line",def:"A solid line with a zigzag kink in it, used to shorten the drawn view of a cylindrical or round member."},es:{term:"línea de ruptura corta",def:"Una línea sólida con un quiebre en zigzag, usada para acortar la vista dibujada de un miembro cilíndrico o redondo."}},
+  centerpoint:{en:{term:"centerpoint",def:"A small plus-sign symbol marking the exact center of a circle or arc."},es:{term:"punto central (centerpoint)",def:"Un pequeño símbolo de signo más que marca el centro exacto de un círculo o arco."}}
 };
 function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function annotate(text){
@@ -713,6 +724,24 @@ const W2_SECTION1 = [
    es:{q:"Las líneas de ruptura se usan para ________.",opts:["mostrar que una característica continúa pero no está dibujada por completo","indicar el centro de un círculo","mostrar el tamaño de una abertura de puerta","representar una toma eléctrica oculta"],c:0,exp:"Las líneas de ruptura se usan donde un arquitecto desea terminar una característica o mostrar que continúa sin dibujarla por completo. 📖 pág. 11"}},
   {type:'fillBlank', en:{q:"Section lines (also called hatching) are used to ________.",opts:["identify internal features and materials in a cut section","show the property line on a plot plan","indicate a door's swing direction","label the title block"],c:0,exp:"Section lines identify internal features and are often drawn as a pattern (hatching) representing the material that was cut through, like concrete or wood. 📖 p.11"},
    es:{q:"Las líneas de sección (también llamadas achurado) se usan para ________.",opts:["identificar características y materiales internos en un corte","mostrar la línea de propiedad en un plano de sitio","indicar la dirección de apertura de una puerta","rotular el cuadro de título"],c:0,exp:"Las líneas de sección identifican características internas y a menudo se dibujan como un patrón que representa el material cortado. 📖 pág. 11"}},
+  {type:'match', en:{prompt:"Match each line symbol to what it looks like and shows.", pairs:[
+      {term:"Object line", def:"A thick, solid continuous line showing the visible edges of an object"},
+      {term:"Hidden line", def:"A series of short, evenly spaced dashes, showing a feature that isn't visible"},
+      {term:"Centerpoint", def:"A small plus-sign symbol marking the exact center of a circle or arc"},
+      {term:"Long break line", def:"A long, continuous wavy freehand line used to shorten a flat member's drawn view"},
+      {term:"Short break line", def:"A solid line with a zigzag kink, used to shorten a cylindrical member's drawn view"},
+      {term:"Leader with open arrowhead", def:"A bent line ending in an open, V-shaped arrowhead, used to call out a note"},
+      {term:"Leader with closed arrowhead", def:"A bent line ending in a solid, filled-in arrowhead, used to call out a note"}
+    ], exp:"Each line type in the alphabet of lines has its own distinct look, so it can be told apart at a glance: object lines are thick and solid, hidden lines are short even dashes, break lines shorten a view (wavy for flat members, a zigzag kink for round ones), and a leader's arrowhead style — open or filled — is the only thing distinguishing those two. 📖 p.10"},
+   es:{prompt:"Relaciona cada símbolo de línea con su apariencia y lo que muestra.", pairs:[
+      {term:"Línea de objeto", def:"Una línea gruesa, sólida y continua que muestra los bordes visibles de un objeto"},
+      {term:"Línea oculta", def:"Una serie de guiones cortos y espaciados uniformemente, que muestra una característica no visible"},
+      {term:"Punto central (centerpoint)", def:"Un pequeño símbolo de signo más que marca el centro exacto de un círculo o arco"},
+      {term:"Línea de ruptura larga", def:"Una línea larga, continua y ondulada a mano alzada, usada para acortar la vista de un miembro plano"},
+      {term:"Línea de ruptura corta", def:"Una línea sólida con un quiebre en zigzag, usada para acortar la vista de un miembro cilíndrico"},
+      {term:"Línea de referencia con flecha abierta", def:"Una línea doblada que termina en una flecha abierta en forma de V, usada para señalar una nota"},
+      {term:"Línea de referencia con flecha cerrada", def:"Una línea doblada que termina en una flecha sólida y rellena, usada para señalar una nota"}
+    ], exp:"Cada tipo de línea en el alfabeto de líneas tiene una apariencia distinta para poder distinguirse de un vistazo: las líneas de objeto son gruesas y sólidas, las líneas ocultas son guiones cortos parejos, las líneas de ruptura acortan una vista (onduladas para miembros planos, con un quiebre en zigzag para los redondos), y el estilo de la punta de flecha de un leader (abierta o cerrada) es lo único que distingue esos dos. 📖 pág. 10"}},
   {en:{q:"True or False: While ANSI publishes line-type guidelines, slight variations in dimensioning styles may still exist between different architects.",opts:["True","False"],c:0,exp:"True — the book itself notes that while ANSI publishes standard guidelines, slight variations in line types and dimensioning styles may exist on real working drawings. 📖 p.10"},
    es:{q:"Verdadero o falso: aunque ANSI publica pautas de tipos de línea, aún pueden existir ligeras variaciones en los estilos de acotado entre distintos arquitectos.",opts:["Verdadero","Falso"],c:0,exp:"Verdadero — aunque ANSI publica pautas estándar, pueden existir ligeras variaciones en los estilos de acotado y tipos de línea en planos reales. 📖 pág. 10"}},
   {type:'fillBlank', en:{q:"An offset section is used when ________.",opts:["an architect needs to bend the cutting plane to intersect features not in a straight line","a drawing has no dimensions at all","two buildings share the same plot plan","a door schedule needs updating"],c:0,exp:"An offset section may be shown when a set of prints has features, such as windows or doors, that aren't in a straight line — the cutting plane is bent, or 'offset,' to intersect the desired features. 📖 p.23"},
@@ -879,6 +908,24 @@ const W3_SECTION4 = [
    es:{q:"Las clasificaciones de puertas cortafuego (Clase A a E) se basan en ________.",opts:["cuánto tiempo resiste el ensamble de la puerta la falla y penetración del fuego","el color de la puerta","el fabricante de la puerta","la dirección de apertura de la puerta"],c:0,exp:"Las clasificaciones de puertas cortafuego se basan en cuánto tiempo resisten la penetración del fuego. 📖 pág. 33"}},
   {type:'fillBlank', en:{q:"A straight-run stairway is designated '14 R UP' on a plan view. This means ________.",opts:["there are 14 risers going up to the next floor","the stair is 14 feet long","there are 14 treads that are each 1 foot wide","the stair was built 14 years ago"],c:0,exp:"'14 R UP' means there are 14 risers going up from that point to the floor above — a direct notation of riser count and direction. 📖 p.34"},
    es:{q:"Una escalera de tramo recto se designa '14 R UP' en una vista de planta. Esto significa ________.",opts:["hay 14 contrahuellas subiendo hasta el siguiente piso","la escalera mide 14 pies de largo","hay 14 huellas que miden cada una 1 pie de ancho","la escalera se construyó hace 14 años"],c:0,exp:"'14 R UP' significa que hay 14 contrahuellas subiendo desde ese punto hasta el piso de arriba. 📖 pág. 34"}},
+  {type:'match', en:{prompt:"Match each stairway term to its definition.", pairs:[
+      {term:"Circular stairway", def:"A curved stairway built from pie-shaped winders instead of straight treads, often labeled by winder count (e.g., '14 WINDERS UP')"},
+      {term:"Straight-run stairway with landing", def:"A straight stairway broken partway up by a flat landing, then continuing as a second straight flight"},
+      {term:"Riser", def:"The vertical face of a single step"},
+      {term:"Tread", def:"The horizontal surface of a single step — the part you step on"},
+      {term:"Finished floor", def:"The completed floor surface level at the top or bottom of a stairway"},
+      {term:"Headroom", def:"The vertical clearance measured from the tread nosings up to the ceiling or structure above"},
+      {term:"Stair angle", def:"The angle a stairway's stringer makes with the horizontal floor"}
+    ], exp:"A plan view labels a stairway by its shape and riser count (straight-run, straight-run with a landing, or circular with winders), while riser, tread, finished floor, headroom, and stair angle are the individual measurements that describe how that stairway is actually built. 📖 p.30"},
+   es:{prompt:"Relaciona cada término de escalera con su definición.", pairs:[
+      {term:"Escalera circular", def:"Una escalera curva construida con peldaños en forma de abanico en lugar de huellas rectas, a menudo etiquetada por su número de peldaños (ej. '14 WINDERS UP')"},
+      {term:"Escalera recta con descanso", def:"Una escalera recta interrumpida por un descanso plano a medio camino, que continúa como un segundo tramo recto"},
+      {term:"Contrahuella (riser)", def:"La cara vertical de un solo escalón"},
+      {term:"Huella (tread)", def:"La superficie horizontal de un solo escalón — la parte donde se pisa"},
+      {term:"Piso terminado (finished floor)", def:"El nivel de la superficie del piso terminado en la parte superior o inferior de una escalera"},
+      {term:"Espacio libre (headroom)", def:"El espacio vertical libre medido desde las narices de las huellas hasta el techo o la estructura de arriba"},
+      {term:"Ángulo de escalera", def:"El ángulo que forma el larguero de una escalera con el piso horizontal"}
+    ], exp:"Una vista de planta etiqueta una escalera por su forma y número de contrahuellas (tramo recto, tramo recto con descanso, o circular con peldaños), mientras que contrahuella, huella, piso terminado, espacio libre y ángulo de escalera son las medidas individuales que describen cómo está construida esa escalera. 📖 pág. 30"}},
   {en:{q:"Using the stair ratio formula T + R = 17\" to 18\", if a riser (R) is 7 inches, what tread width (T) would satisfy the low end of that formula?",opts:["10 inches","7 inches","24 inches","17 inches"],c:0,exp:"17\" − 7\" = 10\", so a 10\" tread would satisfy the low end of the T+R=17\"-to-18\" formula (and an 11\" tread would satisfy the high end). 📖 p.36"},
    es:{q:"Usando la fórmula de relación de escalera T + R = 17\" a 18\", si una contrahuella (R) mide 7 pulgadas, ¿qué ancho de huella (T) satisfaría el límite inferior de esa fórmula?",opts:["10 pulgadas","7 pulgadas","24 pulgadas","17 pulgadas"],c:0,exp:"17\" − 7\" = 10\", así que una huella de 10\" satisface el límite inferior de la fórmula. 📖 pág. 36"}},
   {type:'fillBlank', en:{q:"Per the International Building Code referenced in the text, the minimum headroom required for a stairway is ________.",opts:["6'-8\"","5'-0\"","7'-0\"","8'-0\""],c:0,exp:"Minimum headroom for all portions of a stairway is 6'-8\", measured vertically from an inclined plane formed by the tread nosings. 📖 p.37"},
@@ -1094,6 +1141,26 @@ function shuffleArray(arr){
   const a = arr.slice();
   for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
+}
+// Returns a fresh copy of a question item with its answer options (mc and fillBlank
+// chips both use the same opts/c shape) shuffled into a new order, so the correct
+// answer isn't always sitting in the same position every time the question comes up.
+// The same permutation is applied to both languages so switching EN/ES mid-question
+// still lines up. Match questions already shuffle their own left/right columns per
+// instance in renderMatchQuestion, so they're left untouched here. Never mutates the
+// original item — MODULES/section banks are reused across every future attempt.
+function shuffleQuestionOptions(fullItem){
+  if(!fullItem || fullItem.type==='match') return fullItem;
+  const optsLen = (fullItem.en && fullItem.en.opts) ? fullItem.en.opts.length : 0;
+  if(!optsLen) return fullItem;
+  const perm = shuffleArray([...Array(optsLen).keys()]);
+  const copy = { ...fullItem };
+  ['en','es'].forEach(l=>{
+    if(fullItem[l] && fullItem[l].opts){
+      copy[l] = { ...fullItem[l], opts: perm.map(i=>fullItem[l].opts[i]), c: perm.indexOf(fullItem[l].c) };
+    }
+  });
+  return copy;
 }
 
 /* ---- module dates + "add to calendar" (.ics) ---- */
@@ -1539,11 +1606,13 @@ function startQuiz(cfg){
   // Shuffle the question order every time a quiz is started, so it's never
   // the same sequence twice — shuffleArray returns a fresh array, so the
   // module's original bank (reused across attempts) is left untouched.
-  quizState = { ...cfg, bank: shuffleArray(cfg.bank), idx:0, correctCount:0, answered:false, selected:null, records:[] };
+  // Each question's answer options are also reshuffled per attempt (see
+  // shuffleQuestionOptions) so the correct answer isn't always in the same slot.
+  quizState = { ...cfg, bank: shuffleArray(cfg.bank).map(shuffleQuestionOptions), idx:0, correctCount:0, answered:false, selected:null, records:[] };
   renderQuizQuestion();
 }
 function startCumulativeTest(i){
-  quizState = { kind:'cumulative', modIdx:i, bank: shuffleArray(combinedTestBank(i)), threshold:70, idx:0, correctCount:0, answered:false, selected:null, records:[] };
+  quizState = { kind:'cumulative', modIdx:i, bank: shuffleArray(combinedTestBank(i)).map(shuffleQuestionOptions), threshold:70, idx:0, correctCount:0, answered:false, selected:null, records:[] };
   renderQuizQuestion();
 }
 
