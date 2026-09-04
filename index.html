@@ -1637,12 +1637,26 @@ function renderQuizQuestion(){
   // options as word-bank chips instead of full-width stacked buttons.
   if(itemType==='match'){ renderMatchQuestion(panel, fullItem); return; }
   const item = fullItem[lang];
+  // Randomize answer-option display position per question, every time it's shown — not
+  // just the question order. Without this, an authored question always shows its correct
+  // answer in the same slot (often first, since that's the natural order to write it in),
+  // which trains guessing-the-slot instead of reading. Cached per question index so the
+  // official-test flow (which re-renders on every option click to update the selection
+  // highlight) doesn't reshuffle mid-question, and computed from opts.length rather than
+  // per-language so switching en/es mid-quiz can't desync it (opts arrays are index-parallel
+  // across languages, and `c` is the same numeric index in both).
+  if(!quizState.optPerm || quizState.optPerm.forIdx !== quizState.idx){
+    quizState.optPerm = { forIdx: quizState.idx, order: shuffleArray(item.opts.map((_,i)=>i)) };
+  }
+  const order = quizState.optPerm.order;
+  const dOpts = order.map(i=>item.opts[i]);
+  const dCorrect = order.indexOf(item.c);
   // The official module/cumulative test mimics a real exam: no auto-highlighted glossary
   // terms (a neutral "?" gives lookup on demand instead), you can change your pick before
   // submitting, and right/wrong isn't revealed until the full test is done.
   const isOfficialTest = (quizState.kind==='moduleTest' || quizState.kind==='cumulative');
   let optsHtml = '';
-  item.opts.forEach((opt,idx)=>{
+  dOpts.forEach((opt,idx)=>{
     if(isOfficialTest){
       const selCls = quizState.selected===idx ? ' selected' : '';
       optsHtml += `<button class="option${selCls}" data-i="${idx}">${opt} <span class="opt-def-btn" data-opt="${idx}" style="display:inline-block;margin-left:6px;padding:0 6px;border:1px solid currentColor;border-radius:50%;font-size:0.75rem;opacity:0.7;cursor:pointer;">?</span></button>`;
@@ -1676,13 +1690,13 @@ function renderQuizQuestion(){
       el.addEventListener('click', function(e){
         e.stopPropagation();
         const idx = parseInt(this.dataset.opt);
-        showOptionDefinition(item.opts[idx]);
+        showOptionDefinition(dOpts[idx]);
       });
     });
   }
   document.getElementById('readAloudBtn').onclick = ()=>{
     const optLabels = ['A','B','C','D'];
-    const optsText = item.opts.map((o,idx)=> `${optLabels[idx]}. ${o}`).join('. ');
+    const optsText = dOpts.map((o,idx)=> `${optLabels[idx]}. ${o}`).join('. ');
     speak(item.q + '. ' + optsText);
   };
   const readExplainBtn = document.getElementById('readExplainBtn');
@@ -1706,8 +1720,8 @@ function renderQuizQuestion(){
     });
     document.getElementById('nextBtn').onclick = ()=>{
       if(quizState.selected===null) return;
-      const chosen = quizState.selected; const correct = item.c;
-      quizState.records.push({ q:item.q, opts:item.opts, chosen, correct, exp:item.exp, right: chosen===correct, full: quizState.bank[quizState.idx] });
+      const chosen = quizState.selected; const correct = dCorrect;
+      quizState.records.push({ q:item.q, opts:dOpts, chosen, correct, exp:item.exp, right: chosen===correct, full: quizState.bank[quizState.idx] });
       if(chosen===correct) quizState.correctCount++;
       quizState.selected = null;
       if(quizState.idx+1 < quizState.bank.length){ quizState.idx++; renderQuizQuestion(); }
@@ -1720,13 +1734,13 @@ function renderQuizQuestion(){
     btn.onclick = ()=>{
       if(quizState.answered) return;
       quizState.answered = true;
-      const chosen = parseInt(btn.dataset.i); const correct = item.c;
+      const chosen = parseInt(btn.dataset.i); const correct = dCorrect;
       document.querySelectorAll('#optsWrap .option').forEach((b2,i2)=>{
         if(i2===correct){ b2.classList.add('correct'); b2.innerHTML = '✓ ' + b2.innerHTML; }
         else if(i2===chosen){ b2.classList.add('incorrect'); b2.innerHTML = '✗ ' + b2.innerHTML; }
       });
       if(chosen===correct) quizState.correctCount++;
-      quizState.records.push({ q:item.q, opts:item.opts, chosen, correct, exp:item.exp, right: chosen===correct, full: quizState.bank[quizState.idx] });
+      quizState.records.push({ q:item.q, opts:dOpts, chosen, correct, exp:item.exp, right: chosen===correct, full: quizState.bank[quizState.idx] });
       document.getElementById('revealGate').style.display = 'block';
     };
   });
